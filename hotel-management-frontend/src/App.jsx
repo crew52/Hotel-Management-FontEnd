@@ -1,12 +1,14 @@
 
 import './App.css'
 import {Routes,Route} from "react-router";
+import Login from './pages/Login';
 import HomAdmin from "./layouts/index.jsx";
 import ResponsiveAppBar from "./layouts/index.jsx";
 import HeaderWithNav from "./layouts/index.jsx";
 
 function App() {
-  
+
+
     return (
         <>
             <Routes>
@@ -17,4 +19,4 @@ function App() {
     )
 }
 
-export default App;
+export default App

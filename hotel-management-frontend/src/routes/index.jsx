@@ -1,10 +1,12 @@
 import {Route, Routes} from "react-router";
-import HeaderWithNav from "../layouts/index.jsx";
+import Login from "../pages/Login.jsx";
+import HomeAdmin from "../pages/HomeAdmin.jsx";
 
 function RoutersAdmin(){
    return(
        <Routes>
-           <Route path="/admin" element={<HeaderWithNav/>}></Route>
+           <Route path="/admin" element={<HomeAdmin/>}></Route>
+           <Route path="/login" element={<Login />} />
        </Routes>
    )
 }

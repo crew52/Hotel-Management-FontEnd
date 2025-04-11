@@ -1,14 +1,11 @@
-import React, { useState } from "react";
-import {
-    Box,
-} from "@mui/material";
-import AppbarAdmin from "./AppBar/appbarAdmin.jsx";
-import NavAdmin from "./Nav/navAdmin.jsx";
-import ContentAdmin from "./Content/contentAdmin.jsx";
-import FooterAdmin from "./Footer/footerAdmin.jsx";
+import ContentAdmin from "../layouts/Admin/Content/contentAdmin.jsx";
+import {Box} from "@mui/material";
+import AppbarAdmin from "../layouts/Admin/AppBar/appbarAdmin.jsx";
+import NavAdmin from "../layouts/Admin/Nav/navAdmin.jsx";
+import FooterAdmin from "../layouts/Admin/Footer/footerAdmin.jsx";
+import React from "react";
 
-export default function HeaderWithNav() {
-
+function HomeAdmin() {
     return (
         <Box
             sx={{
@@ -40,5 +37,8 @@ export default function HeaderWithNav() {
             <FooterAdmin/>
 
         </Box>
-    );
+
+    )
 }
+
+export default HomeAdmin;

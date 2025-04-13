@@ -36,11 +36,32 @@ import Menu from '@mui/material/Menu';
 import ListIcon from '@mui/icons-material/List';
 import GridViewIcon from '@mui/icons-material/GridView';
 import MapIcon from '@mui/icons-material/Map';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+import Slide from '@mui/material/Slide';
+import Toolbar from '@mui/material/Toolbar';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import CloseIcon from '@mui/icons-material/Close';
+
+// Transition cho booking dialog (slide-up)
+const BookingTransition = React.forwardRef(function Transition(props, ref) {
+    return <Slide direction="up" ref={ref} {...props} />;
+});
+
+// Transition cho filter dialog (slide-left từ phải sang)
+const FilterTransition = React.forwardRef(function Transition(props, ref) {
+    return <Slide direction="left" ref={ref} {...props} />;
+});
 
 // Styled components cho thanh tìm kiếm
 const Search = styled('div')(({ theme }) => ({
     position: 'relative',
-    borderRadius: theme.shape.borderRadius,
+    borderRadius: 20,
     backgroundColor: '#f0f0f0',
     '&:hover': {
         backgroundColor: '#e0e0e0',
@@ -55,7 +76,7 @@ const Search = styled('div')(({ theme }) => ({
 }));
 
 const SearchIconWrapper = styled('div')(({ theme }) => ({
-    padding: theme.spacing(0, 2),
+    padding: theme.spacing(0, 1),
     height: '100%',
     position: 'absolute',
     pointerEvents: 'none',
@@ -65,12 +86,13 @@ const SearchIconWrapper = styled('div')(({ theme }) => ({
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
-    color: 'inherit',
+    color: '#666',
     '& .MuiInputBase-input': {
-        padding: theme.spacing(1, 1, 1, 0),
-        paddingLeft: `calc(1em + ${theme.spacing(4)})`,
+        padding: theme.spacing(0.9, 1.2, 0.9, 0),
+        paddingLeft: `calc(1em + ${theme.spacing(2)})`,
         transition: theme.transitions.create('width'),
         width: '100%',
+        fontSize: '0.9rem',
         [theme.breakpoints.up('md')]: {
             width: '20ch',
         },
@@ -79,10 +101,13 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 
 // Component RoomBookingView
 function RoomBookingView() {
-    const [viewMode, setViewMode] = React.useState('Sơ đồ'); // Mặc định là Sơ đồ
+    const [viewMode, setViewMode] = React.useState('Sơ đồ');
     const [anchorElSearch, setAnchorElSearch] = React.useState(null);
     const [anchorElTimeFilter, setAnchorElTimeFilter] = React.useState(null);
     const [anchorElPriceTable, setAnchorElPriceTable] = React.useState(null);
+    const [searchValue, setSearchValue] = React.useState('');
+    const [bookingOpen, setBookingOpen] = React.useState(false);
+    const [filterOpen, setFilterOpen] = React.useState(false);
 
     const handleViewModeChange = (mode) => {
         setViewMode(mode);
@@ -94,6 +119,10 @@ function RoomBookingView() {
 
     const handleSearchClose = () => {
         setAnchorElSearch(null);
+    };
+
+    const handleSearchChange = (event) => {
+        setSearchValue(event.target.value);
     };
 
     const handleTimeFilterClick = (event) => {
@@ -112,39 +141,56 @@ function RoomBookingView() {
         setAnchorElPriceTable(null);
     };
 
-    const renderSearchBar = () => {
-        if (viewMode === 'Danh sách') {
-            return (
-                <Search>
-                    <SearchIconWrapper>
-                        <SearchIcon />
-                    </SearchIconWrapper>
-                    <StyledInputBase
-                        placeholder="Tìm kiếm khách hàng, mã đặt phòng..."
-                        inputProps={{ 'aria-label': 'search' }}
-                        onClick={handleSearchClick}
-                    />
-                </Search>
-            );
-        }
-        return (
-            <Box sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#f0f0f0', borderRadius: 4, px: 1, py: 0.5 }}>
-                <SearchIcon sx={{ color: '#666', mr: 1 }} />
-                <Typography variant="body2" sx={{ color: '#666' }} onClick={handleSearchClick}>
-                    Tìm kiếm khách hàng, mã đặt phòng...
-                </Typography>
-            </Box>
-        );
+    const handleBookingOpen = () => {
+        setBookingOpen(true);
     };
+
+    const handleBookingClose = () => {
+        setBookingOpen(false);
+    };
+
+    const handleFilterOpen = () => {
+        setFilterOpen(true);
+    };
+
+    const handleFilterClose = () => {
+        setFilterOpen(false);
+    };
+
+    const renderSearchBar = () => (
+        <Search>
+            <SearchIconWrapper>
+                <SearchIcon sx={{ color: '#666', fontSize: '1.2rem' }} />
+            </SearchIconWrapper>
+            <StyledInputBase
+                placeholder="Tìm kiếm khách hàng, mã đặt phòng..."
+                inputProps={{ 'aria-label': 'search' }}
+                value={searchValue}
+                onChange={handleSearchChange}
+                onClick={handleSearchClick}
+            />
+        </Search>
+    );
 
     const renderCommonElements = () => (
         <>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <IconButton sx={{ backgroundColor: '#e0e0e0', '&:hover': { backgroundColor: '#d0d0d0' } }}>
-                    <FilterListIcon sx={{ color: '#1976d2' }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
+                <IconButton
+                    sx={{
+                        backgroundColor: '#e0e0e0',
+                        '&:hover': { backgroundColor: '#d0d0d0', padding: '4px' },
+                    }}
+                    onClick={handleFilterOpen}
+                >
+                    <FilterListIcon sx={{ color: '#1976d2', fontSize: '1.2rem' }} />
                 </IconButton>
-                <IconButton sx={{ backgroundColor: '#e0e0e0', '&:hover': { backgroundColor: '#d0d0d0' } }}>
-                    <QrCodeScannerIcon sx={{ color: '#1976d2' }} />
+                <IconButton
+                    sx={{
+                        backgroundColor: '#e0e0e0',
+                        '&:hover': { backgroundColor: '#d0d0d0', padding: '4px' },
+                    }}
+                >
+                    <QrCodeScannerIcon sx={{ color: '#1976d2', fontSize: '1.2rem' }} />
                 </IconButton>
             </Box>
             <Menu
@@ -154,57 +200,169 @@ function RoomBookingView() {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'left' }}
             >
-                <MenuItem>Tiểu chi tiết tìm kiếm</MenuItem>
-                <Box sx={{ display: 'flex', gap: 1, px: 2, py: 1 }}>
-                    <Button variant="contained" color="success" size="small">Khách hàng</Button>
-                    <Button variant="contained" color="primary" size="small">Mã đặt phòng</Button>
+                <MenuItem sx={{ fontSize: '0.8rem' }}>Tiểu chi tiết tìm kiếm</MenuItem>
+                <Box sx={{ display: 'flex', gap: 0.5, px: 1, py: 0.7 }}>
+                    <Button
+                        sx={{
+                            backgroundColor: '#E3F2FD',
+                            color: '#1976d2',
+                            borderRadius: 20,
+                            textTransform: 'none',
+                            fontSize: '0.8rem',
+                            padding: '4px 10px',
+                            height: '28px',
+                            '&:hover': { backgroundColor: '#BBDEFB' },
+                        }}
+                    >
+                        Khách hàng
+                    </Button>
+                    <Button
+                        sx={{
+                            backgroundColor: '#FFF8E1',
+                            color: '#FBC02D',
+                            borderRadius: 20,
+                            textTransform: 'none',
+                            fontSize: '0.8rem',
+                            padding: '4px 10px',
+                            height: '28px',
+                            '&:hover': { backgroundColor: '#FFECB3' },
+                        }}
+                    >
+                        Mã đặt phòng
+                    </Button>
                 </Box>
-                <Box sx={{ display: 'flex', gap: 1, px: 2, py: 1 }}>
-                    <Button variant="contained" color="secondary" size="small">Mã kênh bán</Button>
-                    <Button variant="contained" color="info" size="small">Tên phòng</Button>
+                <Box sx={{ display: 'flex', gap: 0.5, px: 1, py: 0.7 }}>
+                    <Button
+                        sx={{
+                            backgroundColor: '#E0F7FA',
+                            color: '#00ACC1',
+                            borderRadius: 20,
+                            textTransform: 'none',
+                            fontSize: '0.8rem',
+                            padding: '4px 10px',
+                            height: '28px',
+                            '&:hover': { backgroundColor: '#B2EBF2' },
+                        }}
+                    >
+                        Mã kênh bán
+                    </Button>
+                    <Button
+                        sx={{
+                            backgroundColor: '#FCE4EC',
+                            color: '#EC407A',
+                            borderRadius: 20,
+                            textTransform: 'none',
+                            fontSize: '0.8rem',
+                            padding: '4px 10px',
+                            height: '28px',
+                            '&:hover': { backgroundColor: '#F8BBD0' },
+                        }}
+                    >
+                        Tên phòng
+                    </Button>
                 </Box>
             </Menu>
         </>
     );
 
+    const renderViewModeButtons = () => (
+        <Box
+            sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                backgroundColor: '#e0e0e0',
+                borderRadius: 20,
+                padding: '2px',
+            }}
+        >
+            <Button
+                sx={{
+                    backgroundColor: viewMode === 'Danh sách' ? '#E3F2FD' : 'transparent',
+                    color: viewMode === 'Danh sách' ? '#1976d2' : '#666',
+                    borderRadius: 20,
+                    textTransform: 'none',
+                    fontSize: '0.8rem',
+                    padding: '4px 10px',
+                    height: '28px',
+                    '&:hover': {
+                        backgroundColor: viewMode === 'Danh sách' ? '#BBDEFB' : '#d0d0d0',
+                    },
+                    minWidth: 'auto',
+                }}
+                startIcon={<ListIcon sx={{ fontSize: '1.2rem' }} />}
+                onClick={() => handleViewModeChange('Danh sách')}
+            >
+                {viewMode === 'Danh sách' && 'Danh sách'}
+            </Button>
+            <Button
+                sx={{
+                    backgroundColor: viewMode === 'Lưới' ? '#FFF8E1' : 'transparent',
+                    color: viewMode === 'Lưới' ? '#FBC02D' : '#666',
+                    borderRadius: 20,
+                    textTransform: 'none',
+                    fontSize: '0.8rem',
+                    padding: '4px 10px',
+                    height: '28px',
+                    '&:hover': {
+                        backgroundColor: viewMode === 'Lưới' ? '#FFECB3' : '#d0d0d0',
+                    },
+                    minWidth: 'auto',
+                }}
+                startIcon={<GridViewIcon sx={{ fontSize: '1.2rem' }} />}
+                onClick={() => handleViewModeChange('Lưới')}
+            >
+                {viewMode === 'Lưới' && 'Lưới'}
+            </Button>
+            <Button
+                sx={{
+                    backgroundColor: viewMode === 'Sơ đồ' ? '#E0F7FA' : 'transparent',
+                    color: viewMode === 'Sơ đồ' ? '#00ACC1' : '#666',
+                    borderRadius: 20,
+                    textTransform: 'none',
+                    fontSize: '0.8rem',
+                    padding: '4px 10px',
+                    height: '28px',
+                    '&:hover': {
+                        backgroundColor: viewMode === 'Sơ đồ' ? '#B2EBF2' : '#d0d0d0',
+                    },
+                    minWidth: 'auto',
+                }}
+                startIcon={<MapIcon sx={{ fontSize: '1.2rem' }} />}
+                onClick={() => handleViewModeChange('Sơ đồ')}
+            >
+                {viewMode === 'Sơ đồ' && 'Sơ đồ'}
+            </Button>
+        </Box>
+    );
+
     const renderSchematicView = () => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1, backgroundColor: '#f5f5f5', borderRadius: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Button
-                    variant={viewMode === 'Danh sách' ? 'contained' : 'outlined'}
-                    color="primary"
-                    startIcon={<ListIcon />}
-                    onClick={() => handleViewModeChange('Danh sách')}
-                    sx={{ minWidth: 'auto' }}
-                >
-                    {viewMode === 'Danh sách' && 'Danh sách'}
-                </Button>
-                <Button
-                    variant={viewMode === 'Lưới' ? 'contained' : 'outlined'}
-                    color="secondary"
-                    startIcon={<GridViewIcon />}
-                    onClick={() => handleViewModeChange('Lưới')}
-                    sx={{ minWidth: 'auto' }}
-                >
-                    {viewMode === 'Lưới' && 'Lưới'}
-                </Button>
-                <Button
-                    variant={viewMode === 'Sơ đồ' ? 'contained' : 'outlined'}
-                    color="success"
-                    startIcon={<MapIcon />}
-                    onClick={() => handleViewModeChange('Sơ đồ')}
-                    sx={{ minWidth: 'auto' }}
-                >
-                    {viewMode === 'Sơ đồ' && 'Sơ đồ'}
-                </Button>
-            </Box>
+        <Box
+            sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                p: 0.9,
+                backgroundColor: '#f5f5f5',
+                borderRadius: 2,
+            }}
+        >
+            {renderViewModeButtons()}
             {renderSearchBar()}
             {renderCommonElements()}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, ml: 'auto' }}>
                 <Button
-                    variant="contained"
-                    color="warning"
-                    endIcon={<ArrowDropDownIcon />}
+                    sx={{
+                        backgroundColor: '#FCE4EC',
+                        color: '#EC407A',
+                        borderRadius: 20,
+                        textTransform: 'none',
+                        fontSize: '0.8rem',
+                        padding: '4px 10px',
+                        height: '28px',
+                        '&:hover': { backgroundColor: '#F8BBD0' },
+                    }}
+                    endIcon={<ArrowDropDownIcon sx={{ fontSize: '1.2rem' }} />}
                     onClick={handlePriceTableClick}
                 >
                     Bảng giá chung
@@ -216,9 +374,22 @@ function RoomBookingView() {
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                     transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
-                    <MenuItem>Bảng giá chung</MenuItem>
+                    <MenuItem sx={{ fontSize: '0.8rem' }}>Bảng giá chung</MenuItem>
                 </Menu>
-                <Button variant="contained" color="success" startIcon={<AddIcon />}>
+                <Button
+                    sx={{
+                        backgroundColor: '#FFEBEE',
+                        color: '#E53935',
+                        borderRadius: 20,
+                        textTransform: 'none',
+                        fontSize: '0.8rem',
+                        padding: '4px 10px',
+                        height: '28px',
+                        '&:hover': { backgroundColor: '#FFCDD2' },
+                    }}
+                    startIcon={<AddIcon sx={{ fontSize: '1.2rem' }} />}
+                    onClick={handleBookingOpen}
+                >
                     Đặt phòng
                 </Button>
             </Box>
@@ -226,43 +397,32 @@ function RoomBookingView() {
     );
 
     const renderGridView = () => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1, backgroundColor: '#f5f5f5', borderRadius: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Button
-                    variant={viewMode === 'Danh sách' ? 'contained' : 'outlined'}
-                    color="primary"
-                    startIcon={<ListIcon />}
-                    onClick={() => handleViewModeChange('Danh sách')}
-                    sx={{ minWidth: 'auto' }}
-                >
-                    {viewMode === 'Danh sách' && 'Danh sách'}
-                </Button>
-                <Button
-                    variant={viewMode === 'Lưới' ? 'contained' : 'outlined'}
-                    color="secondary"
-                    startIcon={<GridViewIcon />}
-                    onClick={() => handleViewModeChange('Lưới')}
-                    sx={{ minWidth: 'auto' }}
-                >
-                    {viewMode === 'Lưới' && 'Lưới'}
-                </Button>
-                <Button
-                    variant={viewMode === 'Sơ đồ' ? 'contained' : 'outlined'}
-                    color="success"
-                    startIcon={<MapIcon />}
-                    onClick={() => handleViewModeChange('Sơ đồ')}
-                    sx={{ minWidth: 'auto' }}
-                >
-                    {viewMode === 'Sơ đồ' && 'Sơ đồ'}
-                </Button>
-            </Box>
+        <Box
+            sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                p: 0.9,
+                backgroundColor: '#f5f5f5',
+                borderRadius: 2,
+            }}
+        >
+            {renderViewModeButtons()}
             {renderSearchBar()}
             {renderCommonElements()}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, ml: 'auto' }}>
                 <Button
-                    variant="contained"
-                    color="info"
-                    endIcon={<ArrowDropDownIcon />}
+                    sx={{
+                        backgroundColor: '#FCE4EC',
+                        color: '#EC407A',
+                        borderRadius: 20,
+                        textTransform: 'none',
+                        fontSize: '0.8rem',
+                        padding: '4px 10px',
+                        height: '28px',
+                        '&:hover': { backgroundColor: '#F8BBD0' },
+                    }}
+                    endIcon={<ArrowDropDownIcon sx={{ fontSize: '1.2rem' }} />}
                     onClick={handleTimeFilterClick}
                 >
                     Thời gian lưu trú
@@ -274,27 +434,69 @@ function RoomBookingView() {
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                     transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
-                    <MenuItem>Thời gian nhàn</MenuItem>
-                    <MenuItem>Thời gian trả</MenuItem>
+                    <MenuItem sx={{ fontSize: '0.8rem' }}>Thời gian nhàn</MenuItem>
+                    <MenuItem sx={{ fontSize: '0.8rem' }}>Thời gian trả</MenuItem>
                 </Menu>
                 <Button
-                    variant="contained"
-                    color="primary"
-                    endIcon={<ArrowDropDownIcon />}
+                    sx={{
+                        backgroundColor: '#E3F2FD',
+                        color: '#1976d2',
+                        borderRadius: 20,
+                        textTransform: 'none',
+                        fontSize: '0.8rem',
+                        padding: '4px 10px',
+                        height: '28px',
+                        '&:hover': { backgroundColor: '#BBDEFB' },
+                    }}
+                    endIcon={<ArrowDropDownIcon sx={{ fontSize: '1.2rem' }} />}
                     onClick={handleTimeFilterClick}
                 >
                     Tuần
                 </Button>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <IconButton sx={{ backgroundColor: '#e0e0e0', '&:hover': { backgroundColor: '#d0d0d0' } }}>
-                        <ArrowBackIosIcon fontSize="small" sx={{ color: '#1976d2' }} />
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        backgroundColor: '#e0e0e0',
+                        borderRadius: 20,
+                        padding: '2px 4px',
+                    }}
+                >
+                    <IconButton
+                        sx={{ '&:hover': { backgroundColor: '#d0d0d0', padding: '4px' } }}
+                    >
+                        <ArrowBackIosIcon
+                            fontSize="small"
+                            sx={{ color: '#1976d2', fontSize: '1rem' }}
+                        />
                     </IconButton>
-                    <Typography variant="body2">11/04/2025 - 17/04/2025</Typography>
-                    <IconButton sx={{ backgroundColor: '#e0e0e0', '&:hover': { backgroundColor: '#d0d0d0' } }}>
-                        <ArrowForwardIosIcon fontSize="small" sx={{ color: '#1976d2' }} />
+                    <Typography variant="body2" sx={{ fontSize: '0.7rem' }}>
+                        11/04/2025 - 17/04/2025
+                    </Typography>
+                    <IconButton
+                        sx={{ '&:hover': { backgroundColor: '#d0d0d0', padding: '4px' } }}
+                    >
+                        <ArrowForwardIosIcon
+                            fontSize="small"
+                            sx={{ color: '#1976d2', fontSize: '1rem' }}
+                        />
                     </IconButton>
                 </Box>
-                <Button variant="contained" color="success" startIcon={<AddIcon />}>
+                <Button
+                    sx={{
+                        backgroundColor: '#FFEBEE',
+                        color: '#E53935',
+                        borderRadius: 20,
+                        textTransform: 'none',
+                        fontSize: '0.8rem',
+                        padding: '4px 10px',
+                        height: '28px',
+                        '&:hover': { backgroundColor: '#FFCDD2' },
+                    }}
+                    startIcon={<AddIcon sx={{ fontSize: '1.2rem' }} />}
+                    onClick={handleBookingOpen}
+                >
                     Đặt phòng
                 </Button>
             </Box>
@@ -302,43 +504,32 @@ function RoomBookingView() {
     );
 
     const renderListView = () => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1, backgroundColor: '#f5f5f5', borderRadius: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Button
-                    variant={viewMode === 'Danh sách' ? 'contained' : 'outlined'}
-                    color="primary"
-                    startIcon={<ListIcon />}
-                    onClick={() => handleViewModeChange('Danh sách')}
-                    sx={{ minWidth: 'auto' }}
-                >
-                    {viewMode === 'Danh sách' && 'Danh sách'}
-                </Button>
-                <Button
-                    variant={viewMode === 'Lưới' ? 'contained' : 'outlined'}
-                    color="secondary"
-                    startIcon={<GridViewIcon />}
-                    onClick={() => handleViewModeChange('Lưới')}
-                    sx={{ minWidth: 'auto' }}
-                >
-                    {viewMode === 'Lưới' && 'Lưới'}
-                </Button>
-                <Button
-                    variant={viewMode === 'Sơ đồ' ? 'contained' : 'outlined'}
-                    color="success"
-                    startIcon={<MapIcon />}
-                    onClick={() => handleViewModeChange('Sơ đồ')}
-                    sx={{ minWidth: 'auto' }}
-                >
-                    {viewMode === 'Sơ đồ' && 'Sơ đồ'}
-                </Button>
-            </Box>
+        <Box
+            sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                p: 0.9,
+                backgroundColor: '#f5f5f5',
+                borderRadius: 2,
+            }}
+        >
+            {renderViewModeButtons()}
             {renderSearchBar()}
             {renderCommonElements()}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, ml: 'auto' }}>
                 <Button
-                    variant="contained"
-                    color="info"
-                    endIcon={<ArrowDropDownIcon />}
+                    sx={{
+                        backgroundColor: '#FCE4EC',
+                        color: '#EC407A',
+                        borderRadius: 20,
+                        textTransform: 'none',
+                        fontSize: '0.8rem',
+                        padding: '4px 10px',
+                        height: '28px',
+                        '&:hover': { backgroundColor: '#F8BBD0' },
+                    }}
+                    endIcon={<ArrowDropDownIcon sx={{ fontSize: '1.2rem' }} />}
                     onClick={handleTimeFilterClick}
                 >
                     Thời gian lưu trú
@@ -350,27 +541,69 @@ function RoomBookingView() {
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                     transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
-                    <MenuItem>Thời gian nhàn</MenuItem>
-                    <MenuItem>Thời gian trả</MenuItem>
+                    <MenuItem sx={{ fontSize: '0.8rem' }}>Thời gian nhàn</MenuItem>
+                    <MenuItem sx={{ fontSize: '0.8rem' }}>Thời gian trả</MenuItem>
                 </Menu>
                 <Button
-                    variant="contained"
-                    color="primary"
-                    endIcon={<ArrowDropDownIcon />}
+                    sx={{
+                        backgroundColor: '#E3F2FD',
+                        color: '#1976d2',
+                        borderRadius: 20,
+                        textTransform: 'none',
+                        fontSize: '0.8rem',
+                        padding: '4px 10px',
+                        height: '28px',
+                        '&:hover': { backgroundColor: '#BBDEFB' },
+                    }}
+                    endIcon={<ArrowDropDownIcon sx={{ fontSize: '1.2rem' }} />}
                     onClick={handleTimeFilterClick}
                 >
                     Tuần
                 </Button>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <IconButton sx={{ backgroundColor: '#e0e0e0', '&:hover': { backgroundColor: '#d0d0d0' } }}>
-                        <ArrowBackIosIcon fontSize="small" sx={{ color: '#1976d2' }} />
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        backgroundColor: '#e0e0e0',
+                        borderRadius: 20,
+                        padding: '2px 4px',
+                    }}
+                >
+                    <IconButton
+                        sx={{ '&:hover': { backgroundColor: '#d0d0d0', padding: '4px' } }}
+                    >
+                        <ArrowBackIosIcon
+                            fontSize="small"
+                            sx={{ color: '#1976d2', fontSize: '1rem' }}
+                        />
                     </IconButton>
-                    <Typography variant="body2">11/04/2025 - 17/04/2025</Typography>
-                    <IconButton sx={{ backgroundColor: '#e0e0e0', '&:hover': { backgroundColor: '#d0d0d0' } }}>
-                        <ArrowForwardIosIcon fontSize="small" sx={{ color: '#1976d2' }} />
+                    <Typography variant="body2" sx={{ fontSize: '0.7rem' }}>
+                        11/04/2025 - 17/04/2025
+                    </Typography>
+                    <IconButton
+                        sx={{ '&:hover': { backgroundColor: '#d0d0d0', padding: '4px' } }}
+                    >
+                        <ArrowForwardIosIcon
+                            fontSize="small"
+                            sx={{ color: '#1976d2', fontSize: '1rem' }}
+                        />
                     </IconButton>
                 </Box>
-                <Button variant="contained" color="success" startIcon={<AddIcon />}>
+                <Button
+                    sx={{
+                        backgroundColor: '#FFEBEE',
+                        color: '#E53935',
+                        borderRadius: 20,
+                        textTransform: 'none',
+                        fontSize: '0.8rem',
+                        padding: '4px 10px',
+                        height: '28px',
+                        '&:hover': { backgroundColor: '#FFCDD2' },
+                    }}
+                    startIcon={<AddIcon sx={{ fontSize: '1.2rem' }} />}
+                    onClick={handleBookingOpen}
+                >
                     Đặt phòng
                 </Button>
             </Box>
@@ -378,21 +611,94 @@ function RoomBookingView() {
     );
 
     return (
-        <Box sx={{ flexGrow: 1, mt: 2 }}>
+        <Box sx={{ flexGrow: 1, mt: 0 }}>
             {viewMode === 'Sơ đồ' && renderSchematicView()}
             {viewMode === 'Lưới' && renderGridView()}
             {viewMode === 'Danh sách' && renderListView()}
+            {/* Booking Dialog */}
+            <Dialog
+                open={bookingOpen}
+                TransitionComponent={BookingTransition}
+                keepMounted
+                onClose={handleBookingClose}
+                aria-describedby="booking-dialog-slide-description"
+            >
+                <DialogTitle>{"Xác nhận đặt phòng?"}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="booking-dialog-slide-description">
+                        Vui lòng xác nhận thông tin đặt phòng. Bạn có muốn tiếp tục đặt phòng này không?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleBookingClose}>Hủy</Button>
+                    <Button onClick={handleBookingClose}>Đồng ý</Button>
+                </DialogActions>
+            </Dialog>
+            {/* Filter Dialog */}
+            <Dialog
+                open={filterOpen}
+                onClose={handleFilterClose}
+                TransitionComponent={FilterTransition}
+                sx={{
+                    '& .MuiDialog-paper': {
+                        width: '42.86%', // 3/7 màn hình
+                        maxWidth: 'none',
+                        height: '100%',
+                        margin: 0,
+                        position: 'fixed',
+                        right: 0,
+                        borderRadius: 0,
+                        boxShadow: '0px 0px 10px rgba(0,0,0,0.2)',
+                    },
+                }}
+            >
+                <AppBar sx={{ position: 'relative', backgroundColor: '#1976d2' }}>
+                    <Toolbar>
+                        <IconButton
+                            edge="start"
+                            color="inherit"
+                            onClick={handleFilterClose}
+                            aria-label="close"
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                        <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
+                            Bộ lọc
+                        </Typography>
+                        <Button autoFocus color="inherit" onClick={handleFilterClose}>
+                            Lưu
+                        </Button>
+                    </Toolbar>
+                </AppBar>
+                <List>
+                    <ListItemButton>
+                        <ListItemText primary="Trạng thái phòng" secondary="Trống" />
+                    </ListItemButton>
+                    <Divider />
+                    <ListItemButton>
+                        <ListItemText primary="Loại phòng" secondary="VIP" />
+                    </ListItemButton>
+                    <Divider />
+                    <ListItemButton>
+                        <ListItemText primary="Giá phòng" secondary="Dưới 1 triệu" />
+                    </ListItemButton>
+                    <Divider />
+                    <ListItemButton>
+                        <ListItemText primary="Tầng" secondary="Tầng 5" />
+                    </ListItemButton>
+                </List>
+            </Dialog>
         </Box>
     );
 }
 
 const AddIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24">
+    <svg width="16" height="16" viewBox="0 0 24 24">
         <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
     </svg>
 );
 
-// Component chính EmployedView
+// Phần EmployedView giữ nguyên
 export default function EmployedView() {
     const [showMenu, setShowMenu] = React.useState(false);
     const menuRef = React.useRef(null);
@@ -578,7 +884,6 @@ export default function EmployedView() {
                 </Box>
             </AppBar>
 
-            {/* Thêm RoomBookingView ngay dưới AppBar */}
             <RoomBookingView />
 
             {showMenu && (

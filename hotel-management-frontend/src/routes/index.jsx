@@ -1,7 +1,7 @@
 import {Route, Routes} from "react-router";
 import Login from "../pages/Login.jsx";
 import HomeAdmin from "../pages/HomeAdmin.jsx";
-import EmployedView from "../layouts/Employed/index.jsx";
+import EmployedView from "../layouts/Employed/EmployedView/index.jsx";
 
 function RoutersAdmin(){
    return(

@@ -62,10 +62,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout function
-  const logout = () => {
-    authService.logout();
-    setUser(null);
-    navigate('/');
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setUser(null);
+      navigate('/login');
+    }
   };
 
   const value = {

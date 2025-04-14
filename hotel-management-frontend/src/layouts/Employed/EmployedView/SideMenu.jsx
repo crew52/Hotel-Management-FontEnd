@@ -10,8 +10,11 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import LogoutIcon from '@mui/icons-material/Logout';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function SideMenu({ menuRef }) {
+    const { logout } = useAuth();
+    
     return (
         <Box
             ref={menuRef}
@@ -66,7 +69,7 @@ export default function SideMenu({ menuRef }) {
                 Hỗ trợ:
                 <Typography sx={{ fontWeight: 600, ml: 1, color: 'green' }}>1900 6522</Typography>
             </MenuItem>
-            <MenuItem sx={{ color: 'red' }}>
+            <MenuItem sx={{ color: 'red' }} onClick={logout}>
                 <LogoutIcon fontSize="small" sx={{ mr: 1 }} /> Đăng xuất
             </MenuItem>
         </Box>

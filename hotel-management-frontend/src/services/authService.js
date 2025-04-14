@@ -36,9 +36,24 @@ const authService = {
   /**
    * Logout current user by removing stored data
    */
-  logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  logout: async () => {
+    try {
+      // Call logout API endpoint
+      const token = localStorage.getItem('token');
+      if (token) {
+        await api.post(`${AUTH_ENDPOINT}/logout`, {}, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    } finally {
+      // Always remove local storage items even if the API call fails
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
   },
   
   /**

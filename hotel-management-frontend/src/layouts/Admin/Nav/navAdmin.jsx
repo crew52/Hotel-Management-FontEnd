@@ -1,8 +1,28 @@
-import {Box, Button,} from "@mui/material";
+import { Box, Button, Popper, MenuList, MenuItem } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useRef } from "react";
 
-function NavAdmin(){
+function NavAdmin() {
+    const [open, setOpen] = useState(false);
+    const anchorRef = useRef(null);
+    const navigate = useNavigate();
+
+
+    const handleMouseEnter = () => {
+        setOpen(true);
+    };
+
+
+    const handleMouseLeave = () => {
+        setOpen(false);
+    };
+
+    const handleMenuItemClick = (path) => {
+        setOpen(false);
+        navigate(path);
+    };
+
 
     const textButtonSx = {
         color: "white",
@@ -14,8 +34,20 @@ function NavAdmin(){
         },
     };
 
+
+    const overviewButtonSx = {
+        color: "white",
+        backgroundColor: "#0052cc",
+        fontWeight: "bold",
+        textTransform: "none",
+        borderRadius: 2,
+        "&:hover": {
+            backgroundColor: "#0041a8",
+        },
+    };
+
     return (
-        <section style={{backgroundColor: "#007bff", padding: "5px 18px"}}>
+        <section style={{ backgroundColor: "#007bff", padding: "5px 18px" }}>
             <nav
                 style={{
                     display: "flex",
@@ -47,36 +79,21 @@ function NavAdmin(){
                 >
                     <Button
                         variant="contained"
-                        sx={{
-                            color: "white",
-                            backgroundColor: "#0052cc",
-                            fontWeight: "bold",
-                            textTransform: "none",
-                            borderRadius: 2,
-                            "&:hover": {
-                                backgroundColor: "#0041a8",
-                            },
-                        }}
+                        sx={overviewButtonSx}
+                        component={Link}
+                        to="/admin"
                     >
                         Tổng quan
                     </Button>
 
                     <Box>
-                        <Button
-                            sx={textButtonSx}
-                            variant="text">
-
+                        <Button variant="text" sx={textButtonSx} component={Link} to="/admin/rooms">
                             Phòng
                         </Button>
-
                     </Box>
 
-
                     <Box>
-                        <Button
-                            variant="text"
-                            sx={textButtonSx}
-                        >
+                        <Button variant="text" sx={textButtonSx} component={Link} to="/admin/goods">
                             Hàng hóa
                         </Button>
                     </Box>
@@ -85,43 +102,104 @@ function NavAdmin(){
                         <Button
                             variant="text"
                             sx={textButtonSx}
+                            component={Link}
+                            to="/admin/transactions"
                         >
                             Giao dịch
                         </Button>
                     </Box>
 
                     <Box>
-                        <Button
-                            variant="text"
-                            sx={textButtonSx}
-                        >
+                        <Button variant="text" sx={textButtonSx} component={Link} to="/admin/partners">
                             Đối tác
                         </Button>
                     </Box>
 
-                    <Box>
-                        <Button
-                            variant="text"
-                            sx={textButtonSx}
-                        >
+
+                    <Box onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+                        <Button variant="text" sx={textButtonSx} ref={anchorRef}>
                             Nhân viên
                         </Button>
+                        <Popper
+                            open={open}
+                            anchorEl={anchorRef.current}
+                            placement="bottom-start"
+                            disablePortal
+                            style={{ zIndex: 9999 }}
+                        >
+                            <Box
+                                sx={{
+                                    bgcolor: "white",
+                                    borderRadius: 1,
+                                    boxShadow: 3,
+                                    minWidth: 180,
+                                }}
+                                onMouseEnter={handleMouseEnter}
+                                onMouseLeave={handleMouseLeave}
+                            >
+                                <MenuList dense>
+                                    <MenuItem onClick={() => handleMenuItemClick("/admin/employee")}>
+                                        Nhân viên
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={() => handleMenuItemClick()}
+                                        sx={{
+                                            "&:hover": {
+                                                backgroundColor: "#f0f0f0",
+                                            },
+                                        }}
+                                    >
+                                        Lịch làm việc
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={() => handleMenuItemClick()}
+                                        sx={{
+                                            "&:hover": {
+                                                backgroundColor: "#f0f0f0",
+                                            },
+                                        }}
+                                    >
+                                        Chấm công
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={() => handleMenuItemClick()}
+                                        sx={{
+                                            "&:hover": {
+                                                backgroundColor: "#f0f0f0",
+                                            },
+                                        }}
+                                    >
+                                        Bảng tính lương
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={() => handleMenuItemClick()}
+                                        sx={{
+                                            "&:hover": {
+                                                backgroundColor: "#f0f0f0",
+                                            },
+                                        }}
+                                    >
+                                        Thiết lập nhân viên
+                                    </MenuItem>
+                                </MenuList>
+                            </Box>
+                        </Popper>
+
                     </Box>
 
                     <Box>
                         <Button
                             variant="text"
                             sx={textButtonSx}
+                            component={Link}
+                            to="/admin/cashbook"
                         >
                             Sổ quỹ
                         </Button>
                     </Box>
 
                     <Box>
-                        <Button
-                            variant="text"
-                            sx={textButtonSx}
-                        >
+                        <Button variant="text" sx={textButtonSx} component={Link} to="/admin/reports">
                             Báo cáo
                         </Button>
                     </Box>
@@ -139,13 +217,13 @@ function NavAdmin(){
                             backgroundColor: "#f0f0f0",
                         },
                     }}
-                    startIcon={<KeyboardArrowDownIcon/>}
+                    startIcon={<KeyboardArrowDownIcon />}
                 >
                     Lễ tân
                 </Button>
             </nav>
         </section>
-    )
+    );
 }
 
 export default NavAdmin;

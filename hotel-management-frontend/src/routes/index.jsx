@@ -3,36 +3,36 @@ import Login from "../pages/Login.jsx";
 import HomeAdmin from "../pages/HomeAdmin.jsx";
 import EmployedView from "../layouts/Employed/EmployedView/index.jsx";
 import ProtectedRoute from "../components/auth/ProtectedRoute.jsx";
+import HomePage from "../pages/HomePage.jsx";
 
 function RoutersAdmin() {
    return (
        <Routes>
            {/* Public routes */}
+           <Route path="/" element={<HomePage />} />
            <Route path="/login" element={<Login />} />
            
-           {/* Protected admin routes */}
+           {/* Protected routes */}
            <Route 
                path="/admin" 
                element={
-                   <ProtectedRoute 
-                       requireAdmin={true} 
-                       element={<HomeAdmin />} 
-                   />
+                   <ProtectedRoute roles={['ROLE_ADMIN']}>
+                       <HomeAdmin />
+                   </ProtectedRoute>
                } 
            />
            
-           {/* Protected employee routes */}
            <Route 
                path="/employees" 
                element={
-                   <ProtectedRoute 
-                       element={<EmployedView />} 
-                   />
+                   <ProtectedRoute>
+                       <EmployedView />
+                   </ProtectedRoute>
                }
            />
            
-           {/* Redirect to login for unknown routes */}
-           <Route path="*" element={<Login />} />
+           {/* Redirect to home page for unknown routes */}
+           <Route path="*" element={<HomePage />} />
        </Routes>
    )
 }

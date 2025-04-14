@@ -1,79 +1,34 @@
-import api from './api';
+import api, { checkConnection } from './api';
 
 const AUTH_ENDPOINT = '/auth';
 
+// Simple authentication service without complex role logic
 const authService = {
-  /**
-   * Check API connection
-   * @returns {Promise} - Promise with connection status
-   */
-  checkConnection: async () => {
-    try {
-      // Thử kết nối với API bằng cách gọi OPTIONS đến endpoint login
-      await api.options(`${AUTH_ENDPOINT}/login`);
-      console.log('API connection successful');
-      return { status: 'ok', message: 'Kết nối API thành công' };
-    } catch (error) {
-      console.error('API connection failed:', error);
-      return { 
-        status: 'error', 
-        message: 'Không thể kết nối đến API. Vui lòng kiểm tra server backend.' 
-      };
-    }
-  },
-
   /**
    * Login user with username/email and password
    * @param {string} usernameOrEmail - User username or email
    * @param {string} password - User password
-   * @returns {Promise} - Promise with user data and token
+   * @returns {Promise} - Promise with user data
    */
   login: async (usernameOrEmail, password) => {
-    console.log('AuthService: Login called with:', { usernameOrEmail });
     try {
-      console.log('Making API request to:', `${AUTH_ENDPOINT}/login`);
       const response = await api.post(`${AUTH_ENDPOINT}/login`, { usernameOrEmail, password });
-      console.log('API response received:', response.data);
-      
-      // Phân tích dữ liệu từ ApiResponse của backend
       const { success, message, data } = response.data;
       
       if (success) {
-        // Check if response contains token directly or in data
-        const token = response.data.token || (data && data.accessToken) || '';
+        // Store token and user info from the response
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.userInfo));
         
-        // If we have a token, store it
-        if (token) {
-          localStorage.setItem('token', token);
-          console.log('Token stored in localStorage');
-        }
-        
-        // For user details, check both response and data property
-        const userInfo = response.data.user || data || {};
-        
-        // Create a default user object with minimal info if no detailed user info available
-        const user = {
-          id: userInfo.id || 'unknown',
-          username: usernameOrEmail,
-          roles: userInfo.roles || [{ name: 'ROLE_USER' }],
-          ...userInfo
-        };
-        
-        // Store user info
-        localStorage.setItem('user', JSON.stringify(user));
-        console.log('User info stored in localStorage:', user);
-        
-        // Return data for AuthContext
         return {
-          token: token,
-          user: user
+          token: data.token,
+          user: data.userInfo
         };
       } else {
-        // Nếu đăng nhập thất bại, ném lỗi với thông báo từ server
-        throw new Error(message || 'Đăng nhập thất bại');
+        throw new Error(message || 'Login failed');
       }
     } catch (error) {
-      console.error('API request failed:', error.response?.data || error.message);
+      console.error('Login failed:', error.message);
       throw error;
     }
   },
@@ -107,6 +62,49 @@ const authService = {
    */
   isAuthenticated: () => {
     return !!localStorage.getItem('token');
+  },
+
+  // Thêm các phương thức mới để xử lý role
+  getUserRoles: () => {
+    const user = authService.getCurrentUser();
+    return user?.roles || [];
+  },
+
+  hasRole: (role) => {
+    const roles = authService.getUserRoles();
+    return roles.includes(role);
+  },
+
+  hasAnyRole: (roles) => {
+    const userRoles = authService.getUserRoles();
+    return roles.some(role => userRoles.includes(role));
+  },
+
+  hasAllRoles: (roles) => {
+    const userRoles = authService.getUserRoles();
+    return roles.every(role => userRoles.includes(role));
+  },
+
+  isAdmin: () => {
+    return authService.hasRole('ROLE_ADMIN');
+  },
+
+  isUser: () => {
+    return authService.hasRole('ROLE_USER');
+  },
+  
+  // Thêm phương thức mới để xác định trang chuyển hướng dựa trên role
+  getRedirectPath: () => {
+    if (authService.isAdmin()) {
+      return '/admin';
+    } else {
+      return '/employees';
+    }
+  },
+  
+  // Thêm phương thức kiểm tra kết nối
+  checkConnection: async () => {
+    return await checkConnection();
   }
 };
 

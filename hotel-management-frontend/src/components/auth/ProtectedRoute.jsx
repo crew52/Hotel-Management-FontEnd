@@ -1,25 +1,21 @@
 import React from 'react';
-import { Navigate, Route } from 'react-router';
-import { useAuth } from '../../contexts/AuthContext';
+import { Navigate, useLocation } from 'react-router';
+import authService from '../../services/authService';
 import { CircularProgress } from '@mui/material';
 
 /**
  * ProtectedRoute component for guarding routes that require authentication
  * @param {Object} props - Component props
  * @param {string} props.redirectPath - Path to redirect to if not authenticated
- * @param {boolean} props.requireAdmin - Whether this route requires admin role
  * @param {JSX.Element} props.element - Route component to render if authenticated
+ * @param {Array} props.roles - Array of roles required for access
  * @returns {JSX.Element} - Protected route component
  */
-const ProtectedRoute = ({ 
-  redirectPath = '/login',
-  requireAdmin = false,
-  element
-}) => {
-  const { user, loading, isAuthenticated } = useAuth();
+const ProtectedRoute = ({ children, roles = [] }) => {
+  const location = useLocation();
 
   // Show loading spinner while checking authentication
-  if (loading) {
+  if (!authService.isAuthenticated()) {
     return (
       <div style={{ 
         display: 'flex', 
@@ -32,18 +28,13 @@ const ProtectedRoute = ({
     );
   }
 
-  // Check if user is authenticated
-  if (!isAuthenticated) {
-    return <Navigate to={redirectPath} replace />;
-  }
-
-  // Check for admin role if required
-  if (requireAdmin && !(user?.role === 'admin' || user?.role === 'ADMIN')) {
-    return <Navigate to="/employed" replace />;
+  // Check if user has the required roles
+  if (roles.length > 0 && !authService.hasAnyRole(roles)) {
+    return <Navigate to="/unauthorized" state={{ from: location }} replace />;
   }
 
   // User is authenticated, render the element
-  return element;
+  return children;
 };
 
 export default ProtectedRoute; 

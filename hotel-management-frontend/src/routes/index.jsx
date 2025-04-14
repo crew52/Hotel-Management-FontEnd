@@ -23,7 +23,7 @@ function RoutersAdmin() {
            
            {/* Protected employee routes */}
            <Route 
-               path="/employed" 
+               path="/employees" 
                element={
                    <ProtectedRoute 
                        element={<EmployedView />} 

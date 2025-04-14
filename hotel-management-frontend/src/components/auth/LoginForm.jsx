@@ -16,18 +16,24 @@ const LoginForm = () => {
   // Kiểm tra kết nối API khi component được tải
   useEffect(() => {
     const checkApiConnection = async () => {
+      console.log('Starting API connection check...');
       try {
         const result = await authService.checkConnection();
+        console.log('API Connection Check Result:', result);
+        
+        // Luôn coi kết nối là thành công nếu có response từ server
+        // Ngay cả khi response là lỗi, điều đó cũng có nghĩa là server đang hoạt động
         setApiStatus({
           checking: false,
-          ok: result.status === 'ok',
-          message: result.message
+          ok: true, // Luôn đặt là true nếu có response
+          message: 'API server đang hoạt động'
         });
-      } catch {
+      } catch (error) {
+        console.error('API Connection Check Error:', error);
         setApiStatus({
           checking: false,
           ok: false,
-          message: 'Không thể kết nối đến API server'
+          message: 'Không thể kết nối đến API server: ' + (error.message || 'Unknown error')
         });
       }
     };

@@ -35,51 +35,29 @@ export const AuthProvider = ({ children }) => {
 
   // Login function
   const login = async (usernameOrEmail, password) => {
-    console.log('AuthContext: Login function called');
     setLoading(true);
     setError(null);
     
     try {
-      console.log('AuthContext: Calling authService.login');
       const data = await authService.login(usernameOrEmail, password);
-      console.log('AuthContext: Login successful, data:', data);
       
-      // Nếu không có user data, không thể tiếp tục
       if (!data.user) {
-        throw new Error('Không nhận được thông tin người dùng');
+        throw new Error('No user information received');
       }
       
       setUser(data.user);
       
-      // Redirect user based on role
-      if (data.user && data.user.roles) {
-        console.log('AuthContext: User roles detected:', data.user.roles);
-        // Nếu người dùng có role ADMIN
-        if (data.user.roles.some(role => role.name === 'ROLE_ADMIN')) {
-          console.log('AuthContext: Redirecting to /admin');
-          navigate('/admin');
-        } 
-        // Các vai trò khác
-        else {
-          console.log('AuthContext: Redirecting to /employed');
-          navigate('/employed');
-        }
-      } else {
-        // Nếu không có thông tin roles, chuyển đến login
-        console.log('AuthContext: No roles detected, redirecting to /employed');
-        navigate('/employed');
-      }
+      // Chuyển hướng dựa trên role của người dùng
+      const redirectPath = authService.getRedirectPath();
+      navigate(redirectPath);
       
       return data;
     } catch (err) {
-      console.error('AuthContext: Login failed:', err);
-      // Xử lý thông báo lỗi từ API 
-      const message = err.response?.data?.message || err.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
+      const message = err.message || 'Login failed. Please try again.';
       setError(message);
       throw err;
     } finally {
       setLoading(false);
-      console.log('AuthContext: Login process completed');
     }
   };
 
@@ -87,7 +65,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     authService.logout();
     setUser(null);
-    navigate('/login');
+    navigate('/');
   };
 
   const value = {

@@ -1,16 +1,122 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useAuth } from '../../contexts/AuthContext';
+import { Alert, CircularProgress } from '@mui/material';
+import authService from '../../services/authService';
 
 const LoginForm = () => {
+  const [formData, setFormData] = useState({
+    usernameOrEmail: '',
+    password: '',
+  });
+  const [formError, setFormError] = useState('');
+  const [apiStatus, setApiStatus] = useState({ checking: true, ok: false, message: '' });
+  const { login, loading, error } = useAuth();
+
+  // Kiểm tra kết nối API khi component được tải
+  useEffect(() => {
+    const checkApiConnection = async () => {
+      try {
+        const result = await authService.checkConnection();
+        setApiStatus({
+          checking: false,
+          ok: result.status === 'ok',
+          message: result.message
+        });
+      } catch {
+        setApiStatus({
+          checking: false,
+          ok: false,
+          message: 'Không thể kết nối đến API server'
+        });
+      }
+    };
+
+    checkApiConnection();
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log('Form submitted with data:', formData);
+    setFormError('');
+
+    // Basic validation
+    if (!formData.usernameOrEmail || !formData.password) {
+      setFormError('Vui lòng nhập cả tên đăng nhập/email và mật khẩu');
+      return;
+    }
+
+    try {
+      console.log('Attempting to login with:', formData.usernameOrEmail);
+      await login(formData.usernameOrEmail, formData.password);
+      console.log('Login function completed');
+      // On success, the auth context will redirect based on user role
+    } catch (err) {
+      // Error is already handled in AuthContext
+      console.error('Login failed:', err);
+    }
+  };
+
   return (
     <StyledWrapper>
       <div className="container">
-        <div className="heading">Sign In</div>
-        <form action className="form">
-          <input required className="input" type="email" name="email" id="email" placeholder="E-mail" />
-          <input required className="input" type="password" name="password" id="password" placeholder="Password" />
-          <span className="forgot-password"><a href="#">Forgot Password ?</a></span>
-          <button className="login-button" type="submit">Sign In</button>
+        <div className="heading">Đăng Nhập</div>
+        
+        {/* API Status Alert */}
+        {apiStatus.checking ? (
+          <Alert severity="info" className="error-alert">
+            Đang kiểm tra kết nối đến máy chủ...
+          </Alert>
+        ) : !apiStatus.ok ? (
+          <Alert severity="error" className="error-alert">
+            {apiStatus.message}
+          </Alert>
+        ) : null}
+        
+        {/* Form Error Alert */}
+        {(error || formError) && !apiStatus.checking && apiStatus.ok && (
+          <Alert severity="error" className="error-alert">
+            {formError || error}
+          </Alert>
+        )}
+        
+        <form onSubmit={handleSubmit} className="form">
+          <input
+            required
+            className="input"
+            type="text"
+            name="usernameOrEmail"
+            id="usernameOrEmail"
+            placeholder="Tên đăng nhập hoặc Email"
+            value={formData.usernameOrEmail}
+            onChange={handleChange}
+            disabled={loading}
+          />
+          <input
+            required
+            className="input"
+            type="password"
+            name="password"
+            id="password"
+            placeholder="Mật khẩu"
+            value={formData.password}
+            onChange={handleChange}
+            disabled={loading}
+          />
+          <span className="forgot-password">
+            <a href="#">Quên mật khẩu?</a>
+          </span>
+          <button className="login-button" type="submit" disabled={loading}>
+            {loading ? <CircularProgress size={20} color="inherit" /> : 'Đăng Nhập'}
+          </button>
         </form>
         <div className="social-account-container">
           <span className="title">Or Sign in with</span>
@@ -47,7 +153,8 @@ const StyledWrapper = styled.div`
   .container {
     max-width: 400px;
     width: 90%;
-    background: rgba(255, 255, 255, 0.95);
+    /* background: rgba(255, 255, 255, 0.95); */
+    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
     border-radius: 20px;
     padding: 30px 40px;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
@@ -66,6 +173,10 @@ const StyledWrapper = styled.div`
     color: #2196f3;
     margin-bottom: 30px;
     letter-spacing: -0.5px;
+  }
+
+  .error-alert {
+    margin-bottom: 15px;
   }
 
   .form {

@@ -2,6 +2,11 @@ import { Route, Routes } from "react-router";
 import Login from "../pages/Login.jsx";
 import HomeAdmin from "../pages/HomeAdmin.jsx";
 import EmployedView from "../layouts/Employed/EmployedView/index.jsx";
+import RoomCategoryList from "../components/roomAdmin/RoomCategoryList.jsx";
+import RoomCategoryForm from "../components/roomAdmin/RoomCategoryForm.jsx";
+import RoomForm from "../components/roomAdmin/RoomForm.jsx";
+function RoutersAdmin(){
+   return(
 import ProtectedRoute from "../components/auth/ProtectedRoute.jsx";
 import HomePage from "../pages/HomePage.jsx";
 

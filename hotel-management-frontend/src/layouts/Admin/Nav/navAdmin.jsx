@@ -1,9 +1,9 @@
 import {Box, Button,} from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import React from "react";
-
+import { useNavigate } from "react-router-dom";
 function NavAdmin(){
-
+    const navigate = useNavigate();
     const textButtonSx = {
         color: "white",
         fontWeight: "bold",
@@ -64,8 +64,9 @@ function NavAdmin(){
                     <Box>
                         <Button
                             sx={textButtonSx}
-                            variant="text">
-
+                            variant="text"
+                            onClick={() => navigate("/admin/rooms")}
+                        >
                             Phòng
                         </Button>
 

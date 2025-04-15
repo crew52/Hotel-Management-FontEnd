@@ -6,6 +6,9 @@ import ContentAdmin from "../layouts/Admin/Content/contentAdmin.jsx";
 import { Typography } from "@mui/material";
 import React from "react";
 import EmployeeAdmin from "../pages/EmployeeAdmin/EmployeeAdmin.jsx";
+import RoomCategoryList from "../components/roomAdmin/RoomCategoryList.jsx";
+import RoomCategoryForm from "../components/roomAdmin/RoomCategoryForm.jsx";
+import RoomForm from "../components/roomAdmin/RoomForm.jsx";
 
 
 const RoomsContent = () => (
@@ -62,6 +65,9 @@ function RoutersAdmin() {
                 <Route path="employee" element={<EmployeeAdmin />} />
                 <Route path="cashbook" element={<CashbookContent />} />
                 <Route path="reports" element={<ReportsContent />} />
+                <Route path="rooms" element={<RoomCategoryList />} />
+                <Route path="add-room-category" element={<RoomCategoryForm />} />
+                <Route path="add-room" element={<RoomForm />} />
             </Route>
             <Route path="/login" element={<Login />} />
             <Route path="/employed" element={<EmployedView />} />

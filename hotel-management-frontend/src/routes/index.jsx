@@ -9,7 +9,8 @@ import EmployeeAdmin from "../pages/EmployeeAdmin/EmployeeAdmin.jsx";
 import RoomCategoryList from "../components/roomAdmin/RoomCategoryList.jsx";
 import RoomCategoryForm from "../components/roomAdmin/RoomCategoryForm.jsx";
 import RoomForm from "../components/roomAdmin/RoomForm.jsx";
-
+import ProtectedRoute from "../components/auth/ProtectedRoute.jsx";
+import HomePage from "../pages/HomePage.jsx";
 
 const RoomsContent = () => (
     <section style={{ padding: "20px", flex: 1 }}>
@@ -57,9 +58,22 @@ const ReportsContent = () => (
 );
 
 function RoutersAdmin() {
+    console.log('Routes initialized');
     return (
         <Routes>
-            <Route path="/admin" element={<HomeAdmin />}>
+            {/* Public routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<Login />} />
+            
+            {/* Protected admin routes */}
+            <Route 
+                path="/admin" 
+                element={
+                    <ProtectedRoute roles={['ROLE_ADMIN']}>
+                        <HomeAdmin />
+                    </ProtectedRoute>
+                } 
+            >
                 <Route index element={<ContentAdmin />} />
                 <Route path="partners" element={<PartnersContent />} />
                 <Route path="employee" element={<EmployeeAdmin />} />
@@ -69,8 +83,29 @@ function RoutersAdmin() {
                 <Route path="add-room-category" element={<RoomCategoryForm />} />
                 <Route path="add-room" element={<RoomForm />} />
             </Route>
-            <Route path="/login" element={<Login />} />
-            <Route path="/employed" element={<EmployedView />} />
+            
+            {/* Protected employee routes - hỗ trợ cả hai đường dẫn */}
+            <Route 
+                path="/employees" 
+                element={
+                    <ProtectedRoute>
+                        <EmployedView />
+                    </ProtectedRoute>
+                }
+            />
+            
+            {/* Hỗ trợ tương thích ngược với đường dẫn cũ /employed */}
+            <Route 
+                path="/employed" 
+                element={
+                    <ProtectedRoute>
+                        <EmployedView />
+                    </ProtectedRoute>
+                }
+            />
+            
+            {/* Redirect to home page for unknown routes */}
+            <Route path="*" element={<HomePage />} />
         </Routes>
     );
 }

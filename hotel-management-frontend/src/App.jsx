@@ -1,18 +1,18 @@
 import './App.css'
 import RoutersAdmin from "./routes/index.jsx";
 import { IdleTimerProvider } from './contexts/IdleTimerContext';
+import IdleTimerWarning from './components/IdleTimerWarning';
+import { useAuth } from './hooks';
 
 function App() {
-    // Handle idle timeout callback
-    const handleOnIdle = () => {
-        console.log('User has gone idle');
-        // You can perform actions like automatic logout here
-        // For example: authService.logout();
-    };
-
+    const { isAuthenticated } = useAuth();
+    
+    console.log('App: isAuthenticated =', isAuthenticated);
+    
     return (
-        <IdleTimerProvider timeout={300000} onIdle={handleOnIdle}>
+        <IdleTimerProvider timeout={15000}>
             <RoutersAdmin/>
+            {isAuthenticated && <IdleTimerWarning />}
         </IdleTimerProvider>
     )
 }

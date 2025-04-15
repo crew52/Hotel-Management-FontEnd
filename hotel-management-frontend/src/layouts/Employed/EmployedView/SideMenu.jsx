@@ -11,9 +11,15 @@ import FeedbackIcon from '@mui/icons-material/Feedback';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../../../hooks';
+import { useNavigate } from 'react-router-dom';
 
 export default function SideMenu({ menuRef }) {
     const { logout } = useAuth();
+    const navigate = useNavigate();
+    
+    const handleNavigateToAdmin = () => {
+        navigate('/admin');
+    };
     
     return (
         <Box
@@ -32,7 +38,7 @@ export default function SideMenu({ menuRef }) {
                 overflowY: 'auto',
             }}
         >
-            <MenuItem>
+            <MenuItem onClick={handleNavigateToAdmin}>
                 <ManageAccountsIcon fontSize="small" sx={{ mr: 1 }} /> Quản lý
             </MenuItem>
             <Divider sx={{ my: 1, mx: '10px', backgroundColor: '#ccc' }} />

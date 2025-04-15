@@ -2,11 +2,13 @@ import { AppBar, Avatar, Box, IconButton, Typography, Menu, MenuItem } from "@mu
 import SettingsIcon from "@mui/icons-material/Settings";
 import React, { useState } from "react";
 import LogoutIcon from "@mui/icons-material/Logout";
+import { useAuth } from "../../../hooks";
 
 function AppbarAdmin() {
 
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
+    const { logout } = useAuth();
 
 
     const handleMenuOpen = (event) => {
@@ -22,7 +24,7 @@ function AppbarAdmin() {
     const handleLogout = () => {
         console.log("Logout clicked");
         handleMenuClose();
-
+        logout();
     };
 
     const handleView = () => {

@@ -58,6 +58,7 @@ const ReportsContent = () => (
 );
 
 function RoutersAdmin() {
+    console.log('Routes initialized');
     return (
         <Routes>
             {/* Public routes */}
@@ -83,9 +84,19 @@ function RoutersAdmin() {
                 <Route path="add-room" element={<RoomForm />} />
             </Route>
             
-            {/* Protected employee routes */}
+            {/* Protected employee routes - hỗ trợ cả hai đường dẫn */}
             <Route 
                 path="/employees" 
+                element={
+                    <ProtectedRoute>
+                        <EmployedView />
+                    </ProtectedRoute>
+                }
+            />
+            
+            {/* Hỗ trợ tương thích ngược với đường dẫn cũ /employed */}
+            <Route 
+                path="/employed" 
                 element={
                     <ProtectedRoute>
                         <EmployedView />

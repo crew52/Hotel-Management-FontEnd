@@ -10,7 +10,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../../hooks';
 
 export default function SideMenu({ menuRef }) {
     const { logout } = useAuth();

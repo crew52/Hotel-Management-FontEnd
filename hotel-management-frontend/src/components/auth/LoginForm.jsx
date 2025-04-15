@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks';
 import { Alert, CircularProgress } from '@mui/material';
-import authService from '../../services/authService';
+import api from '../../services/api';
+import { useNavigate } from 'react-router-dom';
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
@@ -11,14 +12,40 @@ const LoginForm = () => {
   });
   const [formError, setFormError] = useState('');
   const [apiStatus, setApiStatus] = useState({ checking: true, ok: false, message: '' });
-  const { login, loading, error } = useAuth();
+  const { login, loading, error, user } = useAuth();
+  const navigate = useNavigate();
+
+  // Nếu người dùng đã đăng nhập, chuyển hướng họ
+  useEffect(() => {
+    if (user) {
+      console.log("LoginForm: User already logged in:", user);
+      console.log("LoginForm: User roles:", user.roles);
+      
+      // Đảm bảo chuyển hướng đúng dựa trên vai trò người dùng
+      let redirectTo = '/employees'; // Đường dẫn mặc định
+      
+      if (user.roles && Array.isArray(user.roles)) {
+        if (user.roles.includes('ROLE_ADMIN')) {
+          redirectTo = '/admin';
+          console.log("LoginForm: User is admin, redirecting to /admin");
+        } else {
+          console.log("LoginForm: User is not admin, redirecting to /employees");
+        }
+      } else {
+        console.log("LoginForm: No roles found or roles not an array, using default redirect");
+      }
+      
+      console.log(`LoginForm: Redirecting to ${redirectTo}`);
+      navigate(redirectTo);
+    }
+  }, [user, navigate]);
 
   // Kiểm tra kết nối API khi component được tải
   useEffect(() => {
     const checkApiConnection = async () => {
       console.log('Starting API connection check...');
       try {
-        const result = await authService.checkConnection();
+        const result = await api.checkConnection();
         console.log('API Connection Check Result:', result);
         
         // Luôn coi kết nối là thành công nếu có response từ server
@@ -51,7 +78,7 @@ const LoginForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted with data:', formData);
+    console.log('LoginForm: Form submitted with data:', formData);
     setFormError('');
 
     // Basic validation
@@ -61,13 +88,20 @@ const LoginForm = () => {
     }
 
     try {
-      console.log('Attempting to login with:', formData.usernameOrEmail);
-      await login(formData.usernameOrEmail, formData.password);
-      console.log('Login function completed');
-      // On success, the auth context will redirect based on user role
+      console.log('LoginForm: Attempting to login with:', formData.usernameOrEmail);
+      const userData = await login(formData.usernameOrEmail, formData.password);
+      console.log('LoginForm: Login successful, user data:', userData);
+      // Chuyển hướng sẽ được xử lý trong useEffect khi user thay đổi
     } catch (err) {
-      // Error is already handled in AuthContext
-      console.error('Login failed:', err);
+      console.error('LoginForm: Login failed:', err);
+      // Xử lý lỗi chi tiết hơn
+      if (err.response) {
+        setFormError(err.response.data?.message || 'Lỗi server: ' + err.response.status);
+      } else if (err.message) {
+        setFormError(err.message);
+      } else {
+        setFormError('Đăng nhập thất bại, vui lòng thử lại');
+      }
     }
   };
 

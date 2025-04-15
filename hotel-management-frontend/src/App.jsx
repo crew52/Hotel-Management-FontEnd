@@ -10,7 +10,7 @@ function App() {
     console.log('App: isAuthenticated =', isAuthenticated);
     
     return (
-        <IdleTimerProvider timeout={30000}>
+        <IdleTimerProvider timeout={60000}>
             <RoutersAdmin/>
             {isAuthenticated && <IdleTimerWarning />}
         </IdleTimerProvider>

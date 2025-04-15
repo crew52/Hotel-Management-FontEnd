@@ -23,11 +23,11 @@ const AccountModal = ({ open, onClose, userData = {} }) => {
   // Thông tin người dùng mặc định
   const defaultUserData = {
     username: userData.username || 'hoangphu',
-    fullName: userData.fullName || 'hoangphu',
+
     email: userData.email || '',
-    phone: userData.phone || '0912149918',
+    
     role: userData.role || 'Admin',
-    language: userData.language || 'Tiếng Việt',
+ 
     note: userData.note || ''
   };
 
@@ -115,19 +115,7 @@ const AccountModal = ({ open, onClose, userData = {} }) => {
                   />
                 </Box>
 
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" sx={{ mb: 0.5, fontWeight: '500' }}>
-                    Tên đăng nhập
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    variant="outlined"
-                  />
-                </Box>
+               
 
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" sx={{ mb: 0.5, fontWeight: '500' }}>
@@ -159,39 +147,9 @@ const AccountModal = ({ open, onClose, userData = {} }) => {
                   />
                 </Box>
 
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" sx={{ mb: 0.5, fontWeight: '500' }}>
-                    SĐT
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    variant="outlined"
-                    InputProps={{
-                      startAdornment: <InputAdornment position="start">+84</InputAdornment>
-                    }}
-                  />
-                </Box>
+               
 
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" sx={{ mb: 0.5, fontWeight: '500' }}>
-                    Ngôn ngữ
-                  </Typography>
-                  <Select
-                    fullWidth
-                    size="small"
-                    name="language"
-                    value={formData.language}
-                    onChange={handleChange}
-                    IconComponent={KeyboardArrowDownIcon}
-                  >
-                    <MenuItem value="Tiếng Việt">Tiếng Việt</MenuItem>
-                    <MenuItem value="English">English</MenuItem>
-                  </Select>
-                </Box>
+          
               </Box>
             </Box>
 

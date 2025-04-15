@@ -3,9 +3,8 @@ import {Box} from "@mui/material";
 import AppbarAdmin from "../layouts/Admin/AppBar/appbarAdmin.jsx";
 import NavAdmin from "../layouts/Admin/Nav/navAdmin.jsx";
 import FooterAdmin from "../layouts/Admin/Footer/footerAdmin.jsx";
+import { Outlet } from "react-router-dom";
 import React from "react";
-import {Outlet} from "react-router-dom";
-
 
 function HomeAdmin() {
     return (
@@ -35,10 +34,7 @@ function HomeAdmin() {
 
             <AppbarAdmin/>
             <NavAdmin/>
-            <div>
-            <Outlet/>
-            </div>
-            {/*<ContentAdmin/>*/}
+            <Outlet />
             <FooterAdmin/>
 
         </Box>

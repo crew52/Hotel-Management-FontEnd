@@ -3,7 +3,7 @@ import {
     Grid, Box, Typography, Checkbox, FormControlLabel, Select, MenuItem, Button,
     Table, TableHead, TableRow, TableCell, TableBody, IconButton, FormControl,
     TableContainer, Paper, Menu, Dialog, DialogTitle, DialogContent, DialogActions,
-    Snackbar, Alert, InputBase, TextField, Tabs, Tab, RadioGroup, Radio, InputAdornment,
+    Snackbar, Alert, InputBase, TextField, Tabs, Tab, RadioGroup, Radio, InputAdornment, Autocomplete,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -640,6 +640,8 @@ function EmployeeAdmin() {
                         </Tabs>
                     </DialogTitle>
 
+
+
                     <DialogContent sx={{ flex: 1, overflowY: 'auto', p: 1 ,mt:2}}>
                         <Grid container spacing={1}>
 
@@ -1138,118 +1140,244 @@ function EmployeeAdmin() {
                                 </Box>
 
 
-                                <Box  sx={{
-                                    backgroundColor: "white",
-                                    boxShadow: 3,
-                                    borderRadius: 2,
-                                    p: 2,
-                                    mb: 2,
-                                }}>
+                                <Box
+                                    sx={{
+                                        backgroundColor: "white",
+                                        boxShadow: 3,
+                                        borderRadius: 2,
+                                        p: 2,
+                                        mb: 2,
+                                    }}
+                                >
+                                    <Typography
+                                        variant="subtitle1"
+                                        sx={{
+                                            fontWeight: 'bold',
+                                            mb: 2,
+                                            mt: 1,
+                                            color: '#333',
+                                        }}
+                                    >
+                                        Thông tin liên hệ
+                                    </Typography>
 
                                     <Grid container spacing={2}>
-                                        <Typography
-                                            variant="subtitle1"
-                                            sx={{
-                                                fontWeight: 'bold',
-                                                mb: 2,
-                                                mt: 1,
-                                                color: '#333',
-                                            }}
-                                        >
-                                            Thông tin liên hệ
-                                        </Typography>
-
-                                    </Grid>
-
-                                    <Grid container spacing={2}>
-                                        <Grid container spacing={1} alignItems="center">
-                                            <Grid size={4}>
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{
-                                                        mb: 0.5,
-                                                        color: '#555',
-                                                        whiteSpace: 'nowrap',
-                                                    }}
-                                                >
-                                                    Địa chỉ
-                                                </Typography>
-                                            </Grid>
-                                            <Grid size={8}>
-                                                <TextField
-                                                    placeholder=""
-                                                    size="small"
-                                                    variant="outlined"
-                                                    type={"text"}
-                                                    sx={{
-                                                        width: '200px',
-                                                        '& .MuiOutlinedInput-root': {
-                                                            backgroundColor: '#f5f5f5',
-                                                            '& fieldset': {
-                                                                borderColor: '#e0e0e0',
-                                                            },
-                                                        },
-                                                    }}
-                                                />
-                                            </Grid>
-
-
-                                            <Grid size={6}>
-                                                <Grid container spacing={1} alignItems="center">
-                                                    <Grid size={4}>
-                                                        <Typography
-                                                            variant="body2"
-                                                            sx={{
-                                                                mb: 0.5,
-                                                                color: '#555',
-                                                                whiteSpace: 'nowrap',
-                                                            }}
-                                                        >
-                                                            Khu vực
-                                                        </Typography>
-                                                    </Grid>
-
-                                                    <Grid size={8}>
-                                                        <Grid container spacing={1} alignItems="center">
-                                                            <Grid item xs>
-                                                                <FormControl fullWidth size="small">
-                                                                    <Select
-                                                                        displayEmpty
-                                                                        variant="outlined"
-                                                                        defaultValue=""
-                                                                        sx={{ backgroundColor: '#fff' }}
-                                                                    >
-                                                                        <MenuItem value="" disabled>
-                                                                            Chọn khu vực
-                                                                        </MenuItem>
-                                                                    </Select>
-                                                                </FormControl>
-                                                            </Grid>
-                                                        </Grid>
-
-
-                                                    </Grid>
-
+                                        <Grid size={6}>
+                                            <Grid container spacing={1} alignItems="center">
+                                                <Grid size={4}>
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{
+                                                            mb: 0.5,
+                                                            color: '#555',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        Địa chỉ
+                                                    </Typography>
                                                 </Grid>
-
+                                                <Grid size={8}>
+                                                    <TextField
+                                                        placeholder=""
+                                                        size="small"
+                                                        variant="outlined"
+                                                        name="address"
+                                                        value={newEmployee.address}
+                                                        onChange={handleInputChange}
+                                                        sx={{
+                                                            width: '200px',
+                                                            '& .MuiOutlinedInput-root': {
+                                                                '& fieldset': {
+                                                                    borderColor: '#e0e0e0',
+                                                                },
+                                                                '&:hover fieldset': {
+                                                                    borderColor: '#1976d2',
+                                                                },
+                                                                '&.Mui-focused fieldset': {
+                                                                    borderColor: '#1976d2',
+                                                                },
+                                                            },
+                                                        }}
+                                                    />
+                                                </Grid>
                                             </Grid>
+                                        </Grid>
 
+                                        <Grid size={6}>
+                                            <Grid container spacing={1} alignItems="center">
+                                                <Grid size={4}>
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{
+                                                            mb: 0.5,
+                                                            color: '#555',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        Khu vực
+                                                    </Typography>
+                                                </Grid>
+                                                <Grid size={8}>
+                                                    <Autocomplete
+                                                        options={['Thành/TP - Quận/Huyện 1', 'Thành/TP - Quận/Huyện 2']}
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                placeholder="Chọn Thành/TP - Quận/Huyện..."
+                                                                size="small"
+                                                                variant="outlined"
+                                                                sx={{
+                                                                    width: '200px',
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        '& fieldset': {
+                                                                            borderColor: '#e0e0e0',
+                                                                        },
+                                                                        '&:hover fieldset': {
+                                                                            borderColor: '#1976d2',
+                                                                        },
+                                                                        '&.Mui-focused fieldset': {
+                                                                            borderColor: '#1976d2',
+                                                                        },
+                                                                    },
+                                                                }}
+                                                            />
+                                                        )}
+                                                        value={newEmployee.area}
+                                                        onChange={(event, newValue) => {
+                                                            handleInputChange({ target: { name: 'area', value: newValue } });
+                                                        }}
+                                                    />
+                                                </Grid>
+                                            </Grid>
                                         </Grid>
 
 
+                                        <Grid size={6}>
+                                            <Grid container spacing={1} alignItems="center">
+                                                <Grid size={4}>
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{
+                                                            mb: 0.5,
+                                                            color: '#555',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        Email
+                                                    </Typography>
+                                                </Grid>
+                                                <Grid size={8}>
+                                                    <TextField
+                                                        placeholder=""
+                                                        size="small"
+                                                        variant="outlined"
+                                                        name="email"
+                                                        value={newEmployee.email}
+                                                        onChange={handleInputChange}
+                                                        sx={{
+                                                            width: '200px',
+                                                            '& .MuiOutlinedInput-root': {
+                                                                '& fieldset': {
+                                                                    borderColor: '#e0e0e0',
+                                                                },
+                                                                '&:hover fieldset': {
+                                                                    borderColor: '#1976d2',
+                                                                },
+                                                                '&.Mui-focused fieldset': {
+                                                                    borderColor: '#1976d2',
+                                                                },
+                                                            },
+                                                        }}
+                                                    />
+                                                </Grid>
+                                            </Grid>
+                                        </Grid>
 
+
+                                        <Grid size={6}>
+                                            <Grid container spacing={1} alignItems="center">
+                                                <Grid size={4}>
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{
+                                                            mb: 0.5,
+                                                            color: '#555',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        Phường xã
+                                                    </Typography>
+                                                </Grid>
+                                                <Grid size={8}>
+                                                    <Autocomplete
+                                                        options={['Phường/Xã 1', 'Phường/Xã 2']}
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                placeholder="Chọn Phường/Xã"
+                                                                size="small"
+                                                                variant="outlined"
+                                                                sx={{
+                                                                    width: '200px',
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        '& fieldset': {
+                                                                            borderColor: '#e0e0e0',
+                                                                        },
+                                                                        '&:hover fieldset': {
+                                                                            borderColor: '#1976d2',
+                                                                        },
+                                                                        '&.Mui-focused fieldset': {
+                                                                            borderColor: '#1976d2',
+                                                                        },
+                                                                    },
+                                                                }}
+                                                            />
+                                                        )}
+                                                        value={newEmployee.ward}
+                                                        onChange={(event, newValue) => {
+                                                            handleInputChange({ target: { name: 'ward', value: newValue } });
+                                                        }}
+                                                    />
+                                                </Grid>
+                                            </Grid>
+                                        </Grid>
                                     </Grid>
-
-
-
-
-
                                 </Box>
 
 
                             </Grid>
                         </Grid>
                     </DialogContent>
+
+                    <DialogActions
+                        sx={{
+                            position: 'sticky',
+                            bottom: 0,
+                            left: 0,
+                            backgroundColor: 'white',
+                            boxShadow: '0px -2px 5px rgba(0, 0, 0, 0.1)',
+                            zIndex: 1,
+                            p: 2,
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                        }}
+                    >
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            sx={{ textTransform: 'none', mr: 1 }}
+                        >
+                            Lưu
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            sx={{ textTransform: 'none', borderColor: '#e0e0e0', color: '#555' }}
+                        >
+                            Bỏ qua
+                        </Button>
+                    </DialogActions>
 
                 </Dialog>
 

@@ -16,7 +16,8 @@ const StyledLoginPage = styled.div`
   align-items: center;
   min-height: 100vh;
   width: 100%;
-  background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+  background: url(https://images7.alphacoders.com/458/458532.jpg) no-repeat center center fixed;
+  background-size: cover;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -28,7 +29,8 @@ const StyledLoginPage = styled.div`
   
   @media (max-width: 480px) {
     padding: 10px;
-    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+    background: url(https://images7.alphacoders.com/458/458532.jpg) no-repeat center center fixed;
+    background-size: cover;
   }
 `;
 

@@ -218,6 +218,7 @@ function NavAdmin() {
                         },
                     }}
                     startIcon={<KeyboardArrowDownIcon />}
+                    onClick={() => navigate('/employees')}
                 >
                     Lễ tân
                 </Button>

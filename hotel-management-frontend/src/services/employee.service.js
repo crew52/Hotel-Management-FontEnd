@@ -18,6 +18,10 @@ class EmployeeService {
             `/employees?user_id_like=${search}`
         );
     }
+
+    static async addEmployee(employee) {
+        return await axiosInstance.post(`/employees`, employee);
+    }
 }
 
 export default EmployeeService;

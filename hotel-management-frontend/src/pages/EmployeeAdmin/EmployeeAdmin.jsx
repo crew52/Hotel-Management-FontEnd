@@ -3,7 +3,7 @@ import {
     Grid, Box, Typography, Checkbox, FormControlLabel, Select, MenuItem, Button,
     Table, TableHead, TableRow, TableCell, TableBody, IconButton, FormControl,
     TableContainer, Paper, Menu, Dialog, DialogTitle, DialogContent, DialogActions,
-    Snackbar, Alert, InputBase, TextField
+    Snackbar, Alert, InputBase
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -11,6 +11,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import SearchIcon from "@mui/icons-material/Search";
 import EmployeeService from "../../services/employee.service.js";
+import AddEmployeeDialog from './AddEmployeeDialog'; // Import the new component
 
 function EmployeeAdmin() {
     const [employee, setEmployee] = useState([]);
@@ -29,7 +30,6 @@ function EmployeeAdmin() {
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
-
     const [newEmployee, setNewEmployee] = useState({
         id: '',
         user_id: '',
@@ -41,12 +41,16 @@ function EmployeeAdmin() {
         department: '',
         position: '',
         login_account: '',
-        note: ''
+        note: '',
+        address: '',
+        area: '',
+        email: '',
+        ward: ''
     });
 
     const columnOptions = [
         { label: 'Ảnh', key: 'image' },
-        { label: 'Mã nhân viên', key: 'id' }, // Updated from employee_id to id
+        { label: 'Mã nhân viên', key: 'id' },
         { label: 'Mã chấm công', key: 'user_id' },
         { label: 'Tên nhân viên', key: 'full_name' },
         { label: 'Số điện thoại', key: 'phone' },
@@ -67,11 +71,9 @@ function EmployeeAdmin() {
         { label: 'Tài khoản đăng nhập', key: 'login_account' }
     ];
 
-
     useEffect(() => {
         fetchAllEmployees();
     }, []);
-
 
     const fetchAllEmployees = async () => {
         try {
@@ -83,7 +85,6 @@ function EmployeeAdmin() {
             console.error("Error fetching employees:", error);
         }
     };
-
 
     const handleSearchChange = async (event) => {
         const query = event.target.value;
@@ -109,11 +110,9 @@ function EmployeeAdmin() {
         }
     };
 
-
     const handleOpenAddDialog = () => {
         setOpenAddDialog(true);
     };
-
 
     const handleCloseAddDialog = () => {
         setOpenAddDialog(false);
@@ -128,10 +127,13 @@ function EmployeeAdmin() {
             department: '',
             position: '',
             login_account: '',
-            note: ''
+            note: '',
+            address: '',
+            area: '',
+            email: '',
+            ward: ''
         });
     };
-
 
     const handleInputChange = (event) => {
         const { name, value } = event.target;
@@ -139,29 +141,6 @@ function EmployeeAdmin() {
             ...prev,
             [name]: value
         }));
-    };
-
-
-    const handleSaveEmployee = async () => {
-        try {
-            console.log("New employee data:", newEmployee);
-
-
-            const newEmpWithId = { ...newEmployee, id: employee.length + 1 };
-            setEmployee([...employee, newEmpWithId]);
-            setFilteredEmployees([...employee, newEmpWithId]);
-
-            setSnackbarMessage('Thêm nhân viên thành công!');
-            setSnackbarSeverity('success');
-            setOpenSnackbar(true);
-
-            handleCloseAddDialog();
-        } catch (error) {
-            console.error("Error adding employee:", error);
-            setSnackbarMessage('Thêm nhân viên thất bại!');
-            setSnackbarSeverity('error');
-            setOpenSnackbar(true);
-        }
     };
 
     const handleMenuClick = (event) => {
@@ -184,7 +163,7 @@ function EmployeeAdmin() {
         }
     };
 
-    const handleRowSelect = (id) => { // Updated parameter to id
+    const handleRowSelect = (id) => {
         if (selectedRows.includes(id)) {
             setSelectedRows(selectedRows.filter(rowId => rowId !== id));
         } else {
@@ -231,7 +210,7 @@ function EmployeeAdmin() {
             if (validIds.length > 0) {
                 await Promise.all(validIds.map(id => EmployeeService.deleteEmployee(id)));
 
-                const updatedEmployees = employee.filter(emp => !validIds.includes(emp.id)); // Updated to id
+                const updatedEmployees = employee.filter(emp => !validIds.includes(emp.id));
                 setEmployee(updatedEmployees);
                 setFilteredEmployees(updatedEmployees);
                 setSelectedRows([]);
@@ -486,26 +465,11 @@ function EmployeeAdmin() {
                         <Table>
                             <TableHead sx={{ backgroundColor: '#eaf2ff' }}>
                                 <TableRow>
-                                    <TableCell
-                                        sx={{
-                                            minWidth: 50,
-                                            padding: '8px 16px',
-                                            whiteSpace: 'nowrap',
-                                            textAlign: 'left'
-                                        }}
-                                    >
+                                    <TableCell sx={{ minWidth: 50, padding: '8px 16px', whiteSpace: 'nowrap', textAlign: 'left' }}>
                                         <b></b>
                                     </TableCell>
                                     {selectedColumns.map((col, index) => (
-                                        <TableCell
-                                            key={index}
-                                            sx={{
-                                                minWidth: 120,
-                                                padding: '8px 16px',
-                                                whiteSpace: 'nowrap',
-                                                textAlign: 'left'
-                                            }}
-                                        >
+                                        <TableCell key={index} sx={{ minWidth: 120, padding: '8px 16px', whiteSpace: 'nowrap', textAlign: 'left' }}>
                                             <b>{col}</b>
                                         </TableCell>
                                     ))}
@@ -514,38 +478,19 @@ function EmployeeAdmin() {
                             <TableBody>
                                 {filteredEmployees.map((emp, index) => (
                                     <TableRow key={index}>
-                                        <TableCell
-                                            sx={{
-                                                minWidth: 50,
-                                                padding: '8px 16px',
-                                                textAlign: 'left'
-                                            }}
-                                        >
+                                        <TableCell sx={{ minWidth: 50, padding: '8px 16px', textAlign: 'left' }}>
                                             <Checkbox
-                                                checked={selectedRows.includes(emp.id)} // Updated to id
-                                                onChange={() => handleRowSelect(emp.id)} // Updated to id
+                                                checked={selectedRows.includes(emp.id)}
+                                                onChange={() => handleRowSelect(emp.id)}
                                             />
                                         </TableCell>
                                         {selectedColumns.map((col, colIndex) => (
-                                            <TableCell
-                                                key={colIndex}
-                                                sx={{
-                                                    minWidth: 120,
-                                                    padding: '8px 16px',
-                                                    whiteSpace: 'nowrap',
-                                                    textAlign: 'left'
-                                                }}
-                                            >
+                                            <TableCell key={colIndex} sx={{ minWidth: 120, padding: '8px 16px', whiteSpace: 'nowrap', textAlign: 'left' }}>
                                                 {col === 'Ảnh' && emp[labelToKeyMap[col]] ? (
                                                     <img
                                                         src={emp[labelToKeyMap[col]]}
                                                         alt="Employee"
-                                                        style={{
-                                                            width: 80,
-                                                            height: 40,
-                                                            objectFit: 'cover',
-                                                            borderRadius: '10%'
-                                                        }}
+                                                        style={{ width: 80, height: 40, objectFit: 'cover', borderRadius: '10%' }}
                                                     />
                                                 ) : (
                                                     emp[labelToKeyMap[col]] || '-'
@@ -559,12 +504,7 @@ function EmployeeAdmin() {
                     </TableContainer>
                 </Box>
 
-
-                <Dialog
-                    open={openDialog}
-                    onClose={() => setOpenDialog(false)}
-                    disableRestoreFocus={true}
-                >
+                <Dialog open={openDialog} onClose={() => setOpenDialog(false)} disableRestoreFocus={true}>
                     <DialogTitle>Xác nhận xóa</DialogTitle>
                     <DialogContent>
                         Bạn có chắc chắn muốn xóa {selectedRows.length} nhân viên?
@@ -576,220 +516,13 @@ function EmployeeAdmin() {
                 </Dialog>
 
 
-                <Dialog
+
+                <AddEmployeeDialog
                     open={openAddDialog}
                     onClose={handleCloseAddDialog}
-                    disableRestoreFocus={true}
-                    maxWidth="md"
-                    fullWidth
-                >
-                    <DialogTitle>
-                        Thêm mới nhân viên
-                        <IconButton
-                            aria-label="close"
-                            onClick={handleCloseAddDialog}
-                            sx={{
-                                position: 'absolute',
-                                right: 8,
-                                top: 8,
-                                color: (theme) => theme.palette.grey[500],
-                            }}
-                        >
-                            <Typography>X</Typography>
-                        </IconButton>
-                    </DialogTitle>
-                    <DialogContent>
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <Box sx={{ width: '30%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-                                    Chọn ảnh
-                                </Typography>
-                                <Box
-                                    sx={{
-                                        width: 100,
-                                        height: 100,
-                                        border: '1px dashed #ccc',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        mb: 2
-                                    }}
-                                >
-                                    <Typography>📷</Typography>
-                                </Box>
-                            </Box>
-
-
-                            <Box sx={{ width: '70%' }}>
-                                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
-                                    Thông tin khởi tạo
-                                </Typography>
-                                <Grid container spacing={2}>
-                                    <Grid item xs={6}>
-                                        <TextField
-                                            fullWidth
-                                            label="Mã nhân viên"
-                                            name="id"
-                                            value={newEmployee.id}
-                                            onChange={handleInputChange}
-                                            size="small"
-                                        />
-                                    </Grid>
-                                    <Grid item xs={6}>
-                                        <TextField
-                                            fullWidth
-                                            label="Mã nhân viên tự động"
-                                            name="user_id"
-                                            value={newEmployee.user_id}
-                                            onChange={handleInputChange}
-                                            size="small"
-                                        />
-                                    </Grid>
-                                    <Grid item xs={6}>
-                                        <TextField
-                                            fullWidth
-                                            label="Tên nhân viên"
-                                            name="full_name"
-                                            value={newEmployee.full_name}
-                                            onChange={handleInputChange}
-                                            size="small"
-                                        />
-                                    </Grid>
-                                    <Grid item xs={6}>
-                                        <FormControl fullWidth size="small">
-                                            <Select
-                                                displayEmpty
-                                                name="branch"
-                                                value={newEmployee.branch}
-                                                onChange={handleInputChange}
-                                            >
-                                                <MenuItem value="" disabled>
-                                                    <em>Chi nhánh trung tâm</em>
-                                                </MenuItem>
-                                                <MenuItem value="Chi nhánh trung tâm">Chi nhánh trung tâm</MenuItem>
-                                                <MenuItem value="Chi nhánh 1">Chi nhánh 1</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                    </Grid>
-                                    <Grid item xs={6}>
-                                        <FormControl fullWidth size="small">
-                                            <Select
-                                                displayEmpty
-                                                name="work_branch"
-                                                value={newEmployee.work_branch}
-                                                onChange={handleInputChange}
-                                            >
-                                                <MenuItem value="" disabled>
-                                                    <em>Chi nhánh làm việc</em>
-                                                </MenuItem>
-                                                <MenuItem value="Chi nhánh trung tâm">Chi nhánh trung tâm</MenuItem>
-                                                <MenuItem value="Chi nhánh 1">Chi nhánh 1</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                    </Grid>
-                                    <Grid item xs={6}>
-                                        <Button variant="outlined" size="small" sx={{ textTransform: 'none' }}>
-                                            Ẩn thông tin
-                                        </Button>
-                                    </Grid>
-                                </Grid>
-                            </Box>
-                        </Box>
-
-
-                        <Box sx={{ mt: 3 }}>
-                            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
-                                Thông tin công việc
-                            </Typography>
-                            <Grid container spacing={2}>
-                                <Grid item xs={4}>
-                                    <TextField
-                                        fullWidth
-                                        label="Ngày bắt đầu làm việc"
-                                        name="start_date"
-                                        type="date"
-                                        value={newEmployee.start_date}
-                                        onChange={handleInputChange}
-                                        size="small"
-                                        InputLabelProps={{ shrink: true }}
-                                    />
-                                </Grid>
-                                <Grid item xs={4}>
-                                    <FormControl fullWidth size="small">
-                                        <Select
-                                            displayEmpty
-                                            name="department"
-                                            value={newEmployee.department}
-                                            onChange={handleInputChange}
-                                        >
-                                            <MenuItem value="" disabled>
-                                                <em>Chọn phòng ban</em>
-                                            </MenuItem>
-                                            <MenuItem value="Phòng IT">Phòng IT</MenuItem>
-                                            <MenuItem value="Phòng HR">Phòng HR</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                <Grid item xs={4}>
-                                    <FormControl fullWidth size="small">
-                                        <Select
-                                            displayEmpty
-                                            name="position"
-                                            value={newEmployee.position}
-                                            onChange={handleInputChange}
-                                        >
-                                            <MenuItem value="" disabled>
-                                                <em>Chọn chức danh</em>
-                                            </MenuItem>
-                                            <MenuItem value="Trưởng phòng">Trưởng phòng</MenuItem>
-                                            <MenuItem value="Nhân viên">Nhân viên</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                <Grid item xs={4}>
-                                    <FormControl fullWidth size="small">
-                                        <Select
-                                            displayEmpty
-                                            name="login_account"
-                                            value={newEmployee.login_account}
-                                            onChange={handleInputChange}
-                                        >
-                                            <MenuItem value="" disabled>
-                                                <em>Tài khoản đăng nhập</em>
-                                            </MenuItem>
-                                            <MenuItem value="Account 1">Account 1</MenuItem>
-                                            <MenuItem value="Account 2">Account 2</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <TextField
-                                        fullWidth
-                                        label="Ghi chú"
-                                        name="note"
-                                        value={newEmployee.note}
-                                        onChange={handleInputChange}
-                                        size="small"
-                                        multiline
-                                        rows={2}
-                                    />
-                                </Grid>
-                            </Grid>
-                        </Box>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleCloseAddDialog} sx={{ textTransform: 'none' }}>
-                            Bỏ qua
-                        </Button>
-                        <Button
-                            onClick={handleSaveEmployee}
-                            variant="contained"
-                            sx={{ textTransform: 'none', backgroundColor: '#1976d2' }}
-                        >
-                            Lưu
-                        </Button>
-                    </DialogActions>
-                </Dialog>
+                    newEmployee={newEmployee}
+                    handleInputChange={handleInputChange}
+                />
 
                 <Snackbar
                     open={openSnackbar}
@@ -797,11 +530,7 @@ function EmployeeAdmin() {
                     onClose={handleSnackbarClose}
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
                 >
-                    <Alert
-                        onClose={handleSnackbarClose}
-                        severity={snackbarSeverity}
-                        sx={{ width: '100%' }}
-                    >
+                    <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
                         {snackbarMessage}
                     </Alert>
                 </Snackbar>

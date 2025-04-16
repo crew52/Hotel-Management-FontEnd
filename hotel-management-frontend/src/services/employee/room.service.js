@@ -8,13 +8,8 @@ class RoomViewService {
 
 
     static async searchRoomView({ keyword = "", status = "", floor = "" }) {
-        const params = new URLSearchParams();
-
-        if (keyword) params.append("keyword", keyword);
-        if (status) params.append("status", status);
-        if (floor) params.append("floor", floor);
-
-        return await axiosInstance.get(`/rooms/search?${params.toString()}`);
+        const query = `/rooms/search?keyword=${keyword}&status=${status}&floor=${floor}`;
+        return await axiosInstance.get(query);
     }
 
 

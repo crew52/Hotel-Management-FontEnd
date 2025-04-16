@@ -1,25 +1,32 @@
-import React from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
+import React, { useState, useEffect } from 'react';
+import { Box, Card, CardContent, Typography, Chip, IconButton, Button } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchBar from './SearchBar';
 import ViewModeButtons from './ViewModeButtons';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
-import AddIcon from '../common/AddIcon';
-import PropTypes from 'prop-types';
+import ActionButtons from './ActionButtons';
+import { StatusBar } from './StatusBar';
+import RoomViewService from '../../../services/employee/room.service.js';
 
 export default function GridView({ onBookingOpen, onFilterOpen, onViewModeChange }) {
-    const [anchorElSearch, setAnchorElSearch] = React.useState(null);
-    const [anchorElTimeFilter, setAnchorElTimeFilter] = React.useState(null);
-    const [anchorElPriceTable, setAnchorElPriceTable] = React.useState(null);
-    const [searchValue, setSearchValue] = React.useState('');
+    const [anchorElSearch, setAnchorElSearch] = useState(null);
+    const [anchorElPriceTable, setAnchorElPriceTable] = useState(null);
+    const [searchValue, setSearchValue] = useState('');
+    const [rooms, setRooms] = useState([]);
+    const [allRooms, setAllRooms] = useState([]);
+
+    useEffect(() => {
+        const fetchRooms = async () => {
+            try {
+                const res = await RoomViewService.getAllRoomView();
+                const roomData = res.data.content;
+                setRooms(roomData);
+                setAllRooms(roomData);
+            } catch (err) {
+                console.error('Không thể tải danh sách phòng:', err);
+            }
+        };
+        fetchRooms();
+    }, []);
 
     const handleSearchClick = (event) => {
         setAnchorElSearch(event.currentTarget);
@@ -33,14 +40,6 @@ export default function GridView({ onBookingOpen, onFilterOpen, onViewModeChange
         setSearchValue(event.target.value);
     };
 
-    const handleTimeFilterClick = (event) => {
-        setAnchorElTimeFilter(event.currentTarget);
-    };
-
-    const handleTimeFilterClose = () => {
-        setAnchorElTimeFilter(null);
-    };
-
     const handlePriceTableClick = (event) => {
         setAnchorElPriceTable(event.currentTarget);
     };
@@ -49,30 +48,104 @@ export default function GridView({ onBookingOpen, onFilterOpen, onViewModeChange
         setAnchorElPriceTable(null);
     };
 
-    const handlePreviousWeek = () => {
-        console.log('Điều hướng đến tuần trước');
+    const getStatusLabelAndColor = (status, isClean) => {
+        if (status === 'CHECKOUT_SOON') {
+            return { label: 'Chưa dọn', color: 'error' };
+        }
+        return { label: isClean ? 'Đã dọn' : 'Chưa dọn', color: isClean ? 'success' : 'error' };
     };
 
-    const handleNextWeek = () => {
-        console.log('Điều hướng đến tuần sau');
+    const getRoomStatusCounts = () => {
+        const counts = {
+            pendingConfirmation: 0,
+            checkedOut: 0,
+            preBooked: 0,
+            soonCheckIn: 0,
+            inUse: 0,
+            soonCheckOut: 0,
+            overdue: 0,
+            pendingInvoice: 0,
+            available: 0,
+            cleaning: 0,
+            maintenance: 0,
+            unavailable: 0,
+        };
+
+        allRooms.forEach((room) => {
+            switch (room.status) {
+                case 'AVAILABLE': counts.available += 1; break;
+                case 'UPCOMING': counts.soonCheckIn += 1; break;
+                case 'OCCUPIED': counts.inUse += 1; break;
+                case 'CLEANING': counts.cleaning += 1; break;
+                case 'MAINTENANCE': counts.maintenance += 1; break;
+                case 'RESERVED': counts.preBooked += 1; break;
+                case 'UNAVAILABLE': counts.unavailable += 1; break;
+                case 'CHECKOUT_SOON': counts.soonCheckOut += 1; break;
+                case 'OVERDUE': counts.overdue += 1; break;
+                case 'PENDING_CONFIRMATION': counts.pendingConfirmation += 1; break;
+                case 'CHECKED_OUT': counts.checkedOut += 1; break;
+                case 'PENDING_INVOICE': counts.pendingInvoice += 1; break;
+                default: break;
+            }
+        });
+
+        return counts;
     };
+
+    const getBookingData = (room, index) => {
+        return {
+            stt: index + 1,
+            bookingCode: `DP${room.id.toString().padStart(6, '0')}`,
+            channelCode: "",
+            room: `P.${room.id.toString().padStart(3, '0')}`,
+            customer: "Khách lẻ\nNhập ghi chú",
+            checkInTime: "",
+            checkOutTime: "",
+            total: room.roomCategory.dailyPrice.toLocaleString(),
+            paid: "0",
+            action: getActionButton(statusToAction(room.status, room.isClean)),
+        };
+    };
+
+    const statusToAction = (status, isClean) => {
+        if (status === 'CHECKOUT_SOON') return 'CHECKOUT';
+        if (status === 'AVAILABLE' && isClean) return 'CHECKIN';
+        return 'PAYMENT';
+    };
+
+    const getActionButton = (action) => {
+        switch (action) {
+            case 'CHECKIN': return <Button variant="contained" size="small" sx={{ backgroundColor: '#4CAF50', color: '#fff' }}>Nhận phòng</Button>;
+            case 'CHECKOUT': return <Button variant="contained" size="small" sx={{ backgroundColor: '#2196F3', color: '#fff' }}>Trả phòng</Button>;
+            case 'PAYMENT': return <Button variant="contained" size="small" sx={{ backgroundColor: '#FF9800', color: '#fff' }}>Thanh toán</Button>;
+            default: return null;
+        }
+    };
+
+    const handleStatusFilter = async (status) => {
+        try {
+            const response = await RoomViewService.searchRoomView({ status });
+            setRooms(response.data.content);
+        } catch (error) {
+            console.error('Error filtering rooms:', error);
+        }
+    };
+
+    const statusCounts = getRoomStatusCounts();
 
     return (
-        <Box
-            sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                p: 0.9,
-                backgroundColor: '#f5f5f5',
-                borderRadius: 2,
-            }}
-        >
-
-            <ViewModeButtons viewMode="Lưới" onViewModeChange={onViewModeChange} />
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mx: 2 }}>
-                {/* 1. Thanh tìm kiếm */}
+        <Box sx={{ flexGrow: 1 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    p: 0.9,
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: 2,
+                }}
+            >
+                <ViewModeButtons viewMode="Lưới" onViewModeChange={onViewModeChange} />
                 <SearchBar
                     searchValue={searchValue}
                     onSearchChange={handleSearchChange}
@@ -80,153 +153,65 @@ export default function GridView({ onBookingOpen, onFilterOpen, onViewModeChange
                     onSearchClick={handleSearchClick}
                     onSearchClose={handleSearchClose}
                 />
-
-
-                <IconButton
-                    sx={{
-                        backgroundColor: '#e0e0e0',
-                        '&:hover': { backgroundColor: '#d0d0d0', padding: '4px' },
-                    }}
-                    onClick={onFilterOpen}
-                >
-                    <FilterListIcon sx={{ color: '#1976d2', fontSize: '1.2rem' }} />
-                </IconButton>
-                <IconButton
-                    sx={{
-                        backgroundColor: '#e0e0e0',
-                        '&:hover': { backgroundColor: '#d0d0d0', padding: '4px' },
-                    }}
-                >
-                    <QrCodeScannerIcon sx={{ color: '#1976d2', fontSize: '1.2rem' }} />
-                </IconButton>
-
-
-                <Button
-                    sx={{
-                        backgroundColor: '#FCE4EC',
-                        color: '#EC407A',
-                        borderRadius: 20,
-                        textTransform: 'none',
-                        fontSize: '0.8rem',
-                        padding: '4px 10px',
-                        height: '28px',
-                        '&:hover': { backgroundColor: '#F8BBD0' },
-                    }}
-                    endIcon={<ArrowDropDownIcon sx={{ fontSize: '1.2rem' }} />}
-                    onClick={handleTimeFilterClick}
-                >
-                    Thời gian lưu trú
-                </Button>
-                <Menu
-                    anchorEl={anchorElTimeFilter}
-                    open={Boolean(anchorElTimeFilter)}
-                    onClose={handleTimeFilterClose}
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                >
-                    <MenuItem sx={{ fontSize: '0.8rem' }}>Thời gian nhàn</MenuItem>
-                    <MenuItem sx={{ fontSize: '0.8rem' }}>Thời gian trả</MenuItem>
-                </Menu>
-
-                {/* 4. Tuần */}
-                <Button
-                    sx={{
-                        backgroundColor: '#E3F2FD',
-                        color: '#1976d2',
-                        borderRadius: 20,
-                        textTransform: 'none',
-                        fontSize: '0.8rem',
-                        padding: '4px 10px',
-                        height: '28px',
-                        '&:hover': { backgroundColor: '#BBDEFB' },
-                    }}
-                    endIcon={<ArrowDropDownIcon sx={{ fontSize: '1.2rem' }} />}
-                    onClick={handleTimeFilterClick}
-                >
-                    Tuần
-                </Button>
-
-                {/* 5. Ngày tháng */}
-                <Box
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        backgroundColor: '#e0e0e0',
-                        borderRadius: 20,
-                        padding: '2px 4px',
-                    }}
-                >
-                    <IconButton
-                        sx={{ '&:hover': { backgroundColor: '#d0d0d0', padding: '4px' } }}
-                        onClick={handlePreviousWeek}
-                    >
-                        <ArrowBackIosIcon fontSize="small" sx={{ color: '#1976d2', fontSize: '1rem' }} />
-                    </IconButton>
-                    <Typography variant="body2" sx={{ fontSize: '0.7rem' }}>
-                        11/04/2025 - 17/04/2025
-                    </Typography>
-                    <IconButton
-                        sx={{ '&:hover': { backgroundColor: '#d0d0d0', padding: '4px' } }}
-                        onClick={handleNextWeek}
-                    >
-                        <ArrowForwardIosIcon fontSize="small" sx={{ color: '#1976d2', fontSize: '1rem' }} />
-                    </IconButton>
-                </Box>
+                <ActionButtons
+                    onFilterOpen={onFilterOpen}
+                    anchorElPriceTable={anchorElPriceTable}
+                    onPriceTableClick={handlePriceTableClick}
+                    onPriceTableClose={handlePriceTableClose}
+                    onBookingOpen={onBookingOpen}
+                />
             </Box>
 
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, ml: 'auto' }}>
-                <Button
-                    sx={{
-                        backgroundColor: '#FCE4EC',
-                        color: '#EC407A',
-                        borderRadius: 20,
-                        textTransform: 'none',
-                        fontSize: '0.8rem',
-                        padding: '4px 10px',
-                        height: '28px',
-                        '&:hover': { backgroundColor: '#F8BBD0' },
-                    }}
-                    endIcon={<ArrowDropDownIcon sx={{ fontSize: '1.2rem' }} />}
-                    onClick={handlePriceTableClick}
-                >
-                    Bảng giá chung
-                </Button>
-                <Menu
-                    anchorEl={anchorElPriceTable}
-                    open={Boolean(anchorElPriceTable)}
-                    onClose={handlePriceTableClose}
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                >
-                    <MenuItem sx={{ fontSize: '0.8rem' }}>Bảng giá chung</MenuItem>
-                </Menu>
-
-                {/* 7. Đặt phòng */}
-                <Button
-                    sx={{
-                        backgroundColor: '#FFEBEE',
-                        color: '#E53935',
-                        borderRadius: 20,
-                        textTransform: 'none',
-                        fontSize: '0.8rem',
-                        padding: '4px 10px',
-                        height: '28px',
-                        '&:hover': { backgroundColor: '#FFCDD2' },
-                    }}
-                    startIcon={<AddIcon sx={{ fontSize: '1.2rem' }} />}
-                    onClick={onBookingOpen}
-                >
-                    Đặt phòng
-                </Button>
+            <Box
+                sx={{
+                    mt: 1,
+                    p: 2,
+                    backgroundColor: '#E8F5E9',
+                    borderRadius: 2,
+                    height: 600,
+                    overflowY: 'auto',
+                }}
+            >
+                {rooms.length > 0 ? (
+                    <>
+                        <StatusBar
+                            statusCounts={statusCounts}
+                            variant="list-grid"
+                            onStatusFilter={handleStatusFilter}
+                        />
+                        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
+                            {rooms.map((room, index) => {
+                                const bookingData = getBookingData(room, index);
+                                const statusInfo = getStatusLabelAndColor(room.status, room.isClean);
+                                return (
+                                    <Card key={room.id} sx={{ borderRadius: 2, position: 'relative' }}>
+                                        <CardContent sx={{ p: 1.5 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                                <Chip label={statusInfo.label} color={statusInfo.color} size="small" />
+                                                <IconButton size="small"><MoreVertIcon /></IconButton>
+                                            </Box>
+                                            <Box sx={{ mb: 1 }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Mã đặt phòng: {bookingData.bookingCode}</Typography>
+                                                <Typography variant="body2">Phòng: {bookingData.room}</Typography>
+                                                <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>Khách đặt: {bookingData.customer}</Typography>
+                                                <Typography variant="body2">Giờ nhận: {bookingData.checkInTime}</Typography>
+                                                <Typography variant="body2">Giờ trả: {bookingData.checkOutTime}</Typography>
+                                                <Typography variant="body2">Tổng cộng: {bookingData.total}đ</Typography>
+                                                <Typography variant="body2">Khách đã trả: {bookingData.paid}đ</Typography>
+                                            </Box>
+                                            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>{bookingData.action}</Box>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </Box>
+                    </>
+                ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                        <Typography variant="body1">Không có dữ liệu phòng để hiển thị.</Typography>
+                    </Box>
+                )}
             </Box>
         </Box>
     );
 }
-
-GridView.propTypes = {
-    onBookingOpen: PropTypes.func.isRequired,
-    onFilterOpen: PropTypes.func.isRequired,
-    onViewModeChange: PropTypes.func.isRequired,
-};

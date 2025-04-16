@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -14,12 +14,32 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import AddIcon from '../common/AddIcon';
 import PropTypes from 'prop-types';
+import RoomViewService from "../../../services/employee/room.service.js";
 
-export default function ListView({ onBookingOpen, onFilterOpen, onViewModeChange }) {
-    const [anchorElSearch, setAnchorElSearch] = React.useState(null);
-    const [anchorElTimeFilter, setAnchorElTimeFilter] = React.useState(null);
-    const [anchorElPriceTable, setAnchorElPriceTable] = React.useState(null);
-    const [searchValue, setSearchValue] = React.useState('');
+export default function ListView({ onBookingOpen, onFilterOpen, onViewModeChange, onRoomsUpdate }) {
+    const [anchorElSearch, setAnchorElSearch] = useState(null);
+    const [anchorElTimeFilter, setAnchorElTimeFilter] = useState(null);
+    const [anchorElPriceTable, setAnchorElPriceTable] = useState(null);
+    const [searchValue, setSearchValue] = useState('');
+    const [schematic, setSchematic] = useState([]);
+
+    useEffect(() => {
+        const fetchRooms = async () => {
+            try {
+                const res = await RoomViewService.getAllRoomView();
+                const roomData = res.data.content; // Lấy mảng phòng từ "content"
+                setSchematic(roomData);
+                // Gửi dữ liệu lên RoomBookingView
+                if (onRoomsUpdate) {
+                    onRoomsUpdate(roomData);
+                }
+            } catch (err) {
+                console.error('Không thể tải danh sách phòng:', err);
+            }
+        };
+
+        fetchRooms();
+    }, [onRoomsUpdate]);
 
     const handleSearchClick = (event) => {
         setAnchorElSearch(event.currentTarget);
@@ -68,7 +88,6 @@ export default function ListView({ onBookingOpen, onFilterOpen, onViewModeChange
                 borderRadius: 2,
             }}
         >
-
             <ViewModeButtons viewMode="Danh sách" onViewModeChange={onViewModeChange} />
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mx: 2 }}>
@@ -80,7 +99,6 @@ export default function ListView({ onBookingOpen, onFilterOpen, onViewModeChange
                     onSearchClick={handleSearchClick}
                     onSearchClose={handleSearchClose}
                 />
-
 
                 <IconButton
                     sx={{
@@ -99,7 +117,6 @@ export default function ListView({ onBookingOpen, onFilterOpen, onViewModeChange
                 >
                     <QrCodeScannerIcon sx={{ color: '#1976d2', fontSize: '1.2rem' }} />
                 </IconButton>
-
 
                 <Button
                     sx={{
@@ -128,7 +145,6 @@ export default function ListView({ onBookingOpen, onFilterOpen, onViewModeChange
                     <MenuItem sx={{ fontSize: '0.8rem' }}>Thời gian trả</MenuItem>
                 </Menu>
 
-
                 <Button
                     sx={{
                         backgroundColor: '#E3F2FD',
@@ -145,7 +161,6 @@ export default function ListView({ onBookingOpen, onFilterOpen, onViewModeChange
                 >
                     Tuần
                 </Button>
-
 
                 <Box
                     sx={{
@@ -202,7 +217,6 @@ export default function ListView({ onBookingOpen, onFilterOpen, onViewModeChange
                     <MenuItem sx={{ fontSize: '0.8rem' }}>Bảng giá chung</MenuItem>
                 </Menu>
 
-                {/* 7. Đặt phòng */}
                 <Button
                     sx={{
                         backgroundColor: '#FFEBEE',
@@ -228,4 +242,5 @@ ListView.propTypes = {
     onBookingOpen: PropTypes.func.isRequired,
     onFilterOpen: PropTypes.func.isRequired,
     onViewModeChange: PropTypes.func.isRequired,
+    onRoomsUpdate: PropTypes.func.isRequired,
 };

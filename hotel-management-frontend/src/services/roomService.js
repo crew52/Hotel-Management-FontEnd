@@ -100,6 +100,17 @@ const RoomService = {
       throw error;
     }
   },
+
+  searchRoomCategories: async (params) => {
+    try {
+      const response = await apiClient.get(`/api/room-categories/search`, { params });
+      console.log("Response from searchRoomCategories:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error in searchRoomCategories:", error.response?.data || error.message);
+      throw error;
+    }
+  },
 };
 
 export default RoomService;

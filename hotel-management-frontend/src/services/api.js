@@ -58,7 +58,7 @@ axiosInstance.interceptors.response.use(
     
     // Handle token errors
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem("token");
+      localStorage.removeItem("toknpen");
       localStorage.removeItem("user");
       // Redirect to login page if needed
       window.location.href = "/login";
@@ -261,6 +261,10 @@ const api = {
   createEmployee: (employeeData) => axiosInstance.post('/employees', employeeData),
   updateEmployee: (id, employeeData) => axiosInstance.put(`/employees/${id}`, employeeData),
   deleteEmployee: (id) => axiosInstance.delete(`/employees/${id}`),
+  
+  // Activity Log management
+  getActivityLogs: (params) => axiosInstance.get('/activity-logs', { params }),
+  getActivityLogsByUserId: (userId, params) => axiosInstance.get(`/activity-logs/${userId}`, { params }),
 };
 
 export { axiosInstance, api as default, checkConnection }; 

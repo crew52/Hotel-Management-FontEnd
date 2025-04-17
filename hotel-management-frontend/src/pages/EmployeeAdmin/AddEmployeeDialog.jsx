@@ -12,7 +12,7 @@ import * as Yup from 'yup';
 import EmployeeService from "../../services/employee.service.js";
 import { toast } from "react-toastify";
 
-
+  
 const validationSchema = Yup.object({
     userId: Yup.number()
         .required("Mã người dùng là bắt buộc")
@@ -57,7 +57,7 @@ const AddEmployeeDialog = ({ open, onClose, fetchAllEmployees, employee }) => {
     const [previewUrl, setPreviewUrl] = useState(null);
     const [file, setFile] = useState(null);
 
-
+   
     const isEditMode = !!employee;
 
     const formik = useFormik({
@@ -65,17 +65,17 @@ const AddEmployeeDialog = ({ open, onClose, fetchAllEmployees, employee }) => {
             userId: employee ? employee.userId : '',
             fullName: employee ? employee.fullName : '',
             gender: employee ? employee.gender : '',
-            dob: employee ? employee.d干ob.join('-') : '',
+            dob: employee ? employee.dob.join('-') : '',
             phone: employee ? employee.phone : '',
             idCard: employee ? employee.idCard : '',
             address: employee ? employee.address : '',
             position: employee ? employee.position : '',
             department: employee ? employee.department : '',
-            startDate: employee ? employee.startDate.join('-') : '',
+            startDate: employee ? employee.startDate.join('-') : '',  
             note: employee ? employee.note : '',
             imgUrl: employee ? employee.imgUrl : null,
         },
-        enableReinitialize: true,
+        enableReinitialize: true,  
         validationSchema: validationSchema,
         onSubmit: async (values) => {
             let dobArray, startDateArray;

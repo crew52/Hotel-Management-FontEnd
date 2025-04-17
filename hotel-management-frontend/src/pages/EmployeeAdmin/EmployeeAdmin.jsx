@@ -32,6 +32,7 @@ function EmployeeAdmin() {
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
     const [page, setPage] = useState(0);
     const [size, setSize] = useState(10);
+    const [selectedEmployee, setSelectedEmployee] = useState(null);
 
     const columnOptions = [
         { label: 'Ảnh', key: 'image' },
@@ -74,13 +75,42 @@ function EmployeeAdmin() {
                 department: emp.department,
                 start_date: emp.startDate,
                 note: emp.note,
-                image: emp.imgUrl // Hình ảnh từ backend
+                image: emp.imgUrl
             }));
             setEmployee(employees);
             setFilteredEmployees(employees);
         } catch (error) {
             console.error("Error fetching employees:", error);
             setSnackbarMessage('Lấy danh sách nhân viên thất bại!');
+            setSnackbarSeverity('error');
+            setOpenSnackbar(true);
+        }
+    };
+
+    const fetchEmployeeById = async (id) => {
+        try {
+            const response = await EmployeeService.getUserById(id);
+            const emp = response.data;
+            const employeeData = {
+                id: emp.id,
+                userId: emp.userId,
+                fullName: emp.fullName,
+                gender: emp.gender,
+                dob: emp.dob,
+                phone: emp.phone,
+                idCard: emp.idCard,
+                address: emp.address,
+                position: emp.position,
+                department: emp.department,
+                startDate: emp.startDate,
+                note: emp.note,
+                imgUrl: emp.imgUrl
+            };
+            setSelectedEmployee(employeeData);
+            setOpenAddDialog(true);
+        } catch (error) {
+            console.error("Error fetching employee details:", error);
+            setSnackbarMessage('Lấy thông tin nhân viên thất bại!');
             setSnackbarSeverity('error');
             setOpenSnackbar(true);
         }
@@ -118,12 +148,18 @@ function EmployeeAdmin() {
         }
     };
 
+    const handleRowClick = (emp) => {
+        fetchEmployeeById(emp.id);
+    };
+
     const handleOpenAddDialog = () => {
+        setSelectedEmployee(null);
         setOpenAddDialog(true);
     };
 
     const handleCloseAddDialog = () => {
         setOpenAddDialog(false);
+        setSelectedEmployee(null);
     };
 
     const handleMenuClick = (event) => {
@@ -146,7 +182,9 @@ function EmployeeAdmin() {
         }
     };
 
-    const handleRowSelect = (id) => {
+    const handleRowSelect = (id, event) => {
+        event.stopPropagation();
+
         if (selectedRows.includes(id)) {
             setSelectedRows(selectedRows.filter(rowId => rowId !== id));
         } else {
@@ -188,7 +226,7 @@ function EmployeeAdmin() {
 
             if (validIds.length > 0) {
                 await Promise.all(validIds.map(id => EmployeeService.deleteEmployee(id)));
-                fetchAllEmployees(page, size); // Làm mới danh sách
+                fetchAllEmployees(page, size);
                 setSelectedRows([]);
                 setSnackbarMessage('Xóa nhân viên thành công!');
                 setSnackbarSeverity('success');
@@ -453,11 +491,24 @@ function EmployeeAdmin() {
                             </TableHead>
                             <TableBody>
                                 {filteredEmployees.map((emp, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell sx={{ minWidth: 50, padding: '8px 16px', textAlign: 'left' }}>
+                                    <TableRow
+                                        key={index}
+                                        onClick={() => handleRowClick(emp)}
+                                        sx={{
+                                            cursor: 'pointer',
+                                            '&:hover': {
+                                                backgroundColor: '#f5f5f5'
+                                            }
+                                        }}
+                                    >
+                                        <TableCell
+                                            sx={{ minWidth: 50, padding: '8px 16px', textAlign: 'left' }}
+                                            onClick={(e) => e.stopPropagation()} // Prevent row click when clicking in this cell
+                                        >
                                             <Checkbox
                                                 checked={selectedRows.includes(emp.id)}
-                                                onChange={() => handleRowSelect(emp.id)}
+                                                onChange={(e) => handleRowSelect(emp.id, e)}
+                                                onClick={(e) => e.stopPropagation()} // Prevent row click when clicking checkbox
                                             />
                                         </TableCell>
                                         {selectedColumns.map((col, colIndex) => (
@@ -501,6 +552,7 @@ function EmployeeAdmin() {
                     open={openAddDialog}
                     onClose={handleCloseAddDialog}
                     fetchAllEmployees={() => fetchAllEmployees(page, size)}
+                    employee={selectedEmployee}
                 />
 
                 <Snackbar

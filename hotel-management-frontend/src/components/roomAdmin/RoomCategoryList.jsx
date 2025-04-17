@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,41 +18,73 @@ import {
     CircularProgress,
     Typography,
 } from "@mui/material";
-import RoomService from "../../services/RoomServices.js";
+import roomService from "../../services/RoomService.js"; // Sửa tên import nếu cần
 import { toast } from "react-toastify";
 import RoomList from "./RoomList";
 import RoomForm from "./RoomForm";
+import RoomCategoryForm from "./RoomCategoryForm"; // Import RoomCategoryForm
+
+const FORM_MODES = {
+    ADD: 'add',
+    EDIT: 'edit',
+    VIEW: 'view'
+};
+
+const FORM_TYPES = {
+    CATEGORY: 'category',
+    ROOM: 'room'
+};
+
+const ROOM_STATUS = {
+    ACTIVE: 'ACTIVE',
+    INACTIVE: 'INACTIVE'
+};
+
+const INITIAL_STATE = {
+    categories: [],
+    roomCounts: {},
+    selectedTab: 0,
+    isLoading: true,
+    errorMessage: null,
+    isFormOpen: false,
+    formMode: FORM_MODES.ADD,
+    formType: FORM_TYPES.CATEGORY,
+    selectedItem: null
+};
 
 const RoomCategoryList = () => {
-    const [categories, setCategories] = useState([]);
-    const [rooms, setRooms] = useState([]);
-    const [selectedTab, setSelectedTab] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [openForm, setOpenForm] = useState(false);
-    const [formMode, setFormMode] = useState("add");
-    const [formType, setFormType] = useState("category");
-    const [selectedItem, setSelectedItem] = useState(null);
+    const [state, setState] = useState(INITIAL_STATE);
     const navigate = useNavigate();
 
     const fetchData = async () => {
         try {
-            setLoading(true);
-            setError(null);
+            setState(prev => ({ ...prev, isLoading: true, errorMessage: null }));
 
-            const [categoriesData, roomsData] = await Promise.all([
-                RoomService.getRoomCategories(),
-                RoomService.getRooms(),
-            ]);
+            const categoriesData = await roomService.getRoomCategories();
+            const categoriesArray = Array.isArray(categoriesData) ? categoriesData : [];
 
-            setCategories(categoriesData);
-            setRooms(roomsData);
+            const roomsResponse = await roomService.getAll(0, 100);
+            const rooms = roomsResponse.content || [];
+
+            const roomCounts = categoriesArray.reduce((counts, category) => ({
+                ...counts,
+                [category.id]: rooms.filter(room => room.roomCategory?.id === category.id).length
+            }), {});
+
+            setState(prev => ({
+                ...prev,
+                categories: categoriesArray,
+                roomCounts,
+                isLoading: false
+            }));
         } catch (error) {
-            setError("Không thể tải dữ liệu. Vui lòng kiểm tra kết nối và thử lại.");
+            console.error('Error fetching data:', error);
+            setState(prev => ({
+                ...prev,
+                errorMessage: "Không thể tải dữ liệu hạng phòng. Vui lòng kiểm tra kết nối và thử lại.",
+                isLoading: false
+            }));
             toast.error("Lỗi khi tải dữ liệu!");
-            console.error(error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -59,111 +93,110 @@ const RoomCategoryList = () => {
     }, []);
 
     const handleTabChange = (event, newValue) => {
-        setSelectedTab(newValue);
+        setState(prev => ({ ...prev, selectedTab: newValue }));
     };
 
-    const getRoomCount = (categoryId) => {
-        return rooms.filter((room) => room.room_category_id === categoryId).length;
+    const validateFormOpen = async (mode, type, item) => {
+        if (mode === FORM_MODES.EDIT && !item) {
+            toast.error("Không tìm thấy dữ liệu để chỉnh sửa!");
+            return false;
+        }
+
+        if ((mode === FORM_MODES.EDIT || mode === FORM_MODES.VIEW) && !item?.id) {
+            toast.error(`Không tìm thấy ID unique của ${type === FORM_TYPES.ROOM ? 'phòng' : 'hạng phòng'}!`);
+            return false;
+        }
+
+        try {
+            if (type === FORM_TYPES.CATEGORY) {
+                const categoriesData = await roomService.getRoomCategories();
+                const existingCategory = categoriesData.find(cat => cat.id === item?.id);
+                if (!existingCategory && (mode === FORM_MODES.EDIT || mode === FORM_MODES.VIEW)) {
+                    toast.error("Hạng phòng không tồn tại! Đang làm mới danh sách...");
+                    await fetchData();
+                    return false;
+                }
+                return existingCategory || item;
+            } else {
+                const roomsData = await roomService.getAll(0, 10);
+                const existingRoom = roomsData.content?.find(room => room.id === item?.id);
+                if (!existingRoom && (mode === FORM_MODES.EDIT || mode === FORM_MODES.VIEW)) {
+                    toast.error("Phòng không tồn tại! Đang làm mới danh sách...");
+                    await fetchData();
+                    return false;
+                }
+                return existingRoom || item;
+            }
+        } catch (error) {
+            console.error('Error validating form:', error);
+            toast.error(`Không thể kiểm tra dữ liệu ${type === FORM_TYPES.ROOM ? 'phòng' : 'hạng phòng'}!`);
+            return false;
+        }
     };
 
     const handleOpenForm = async (mode, type, item = null) => {
-        if (mode === "edit" && !item) {
-            toast.error("Không tìm thấy dữ liệu để chỉnh sửa!");
+        const validatedItem = await validateFormOpen(mode, type, item);
+        if (!validatedItem && (mode === FORM_MODES.EDIT || mode === FORM_MODES.VIEW)) {
             return;
-        }
-        if (type === "room" && mode === "edit" && item && !item.id) {
-            toast.error("Không tìm thấy ID unique của phòng để chỉnh sửa!");
-            return;
-        }
-        if (type === "room" && mode === "view" && item && !item.id) {
-            toast.error("Không tìm thấy ID unique của phòng để xem chi tiết!");
-            return;
-        }
-        if (type === "category" && mode === "edit" && item && !item.id) {
-            toast.error("Không tìm thấy ID unique của hạng phòng để chỉnh sửa!");
-            return;
-        }
-        if (type === "category" && (mode === "edit" || mode === "view")) {
-            try {
-                const categoriesData = await RoomService.getRoomCategories();
-                const exists = categoriesData.find((cat) => cat.id === item.id);
-                if (!exists) {
-                    toast.error("Hạng phòng không tồn tại trong dữ liệu! Đang làm mới danh sách...");
-                    await fetchData();
-                    return;
-                }
-                item = categoriesData.find((cat) => cat.id === item.id);
-            } catch (error) {
-                toast.error("Không thể kiểm tra dữ liệu hạng phòng!");
-                console.error(error);
-                return;
-            }
-        }
-        if (type === "room" && (mode === "edit" || mode === "view")) {
-            try {
-                const roomsData = await RoomService.getRooms();
-                const exists = roomsData.find((room) => room.id === item.id);
-                if (!exists) {
-                    toast.error("Phòng không tồn tại trong dữ liệu! Đang làm mới danh sách...");
-                    await fetchData();
-                    return;
-                }
-                item = roomsData.find((room) => room.id === item.id);
-            } catch (error) {
-                toast.error("Không thể kiểm tra dữ liệu phòng!");
-                console.error(error);
-                return;
-            }
         }
 
-        console.log("Opening form with mode:", mode, "type:", type, "item:", item);
-        setFormMode(mode);
-        setFormType(type);
-        setSelectedItem(item);
-        setOpenForm(true);
+        setState(prev => ({
+            ...prev,
+            formMode: mode,
+            formType: type,
+            selectedItem: validatedItem,
+            isFormOpen: true
+        }));
     };
 
     const handleCloseForm = () => {
-        setOpenForm(false);
-        setSelectedItem(null);
+        setState(prev => ({
+            ...prev,
+            isFormOpen: false,
+            selectedItem: null
+        }));
     };
 
     const handleSave = async (updatedItem) => {
-        console.log("handleSave called with updatedItem:", updatedItem);
-        if (formType === "category") {
-            if (formMode === "add") {
-                setCategories([...categories, updatedItem]);
-            } else if (updatedItem === null) {
-                setCategories(categories.filter((cat) => cat.id !== selectedItem.id));
-            } else if (updatedItem.mode === "edit") {
-                setFormMode("edit");
-                setSelectedItem(updatedItem);
-                return;
+        const { formType, formMode, selectedItem } = state;
+
+        try {
+            if (formType === FORM_TYPES.CATEGORY) {
+                if (formMode === FORM_MODES.ADD) {
+                    await roomService.addRoomCategory(updatedItem);
+                    toast.success("Thêm hạng phòng thành công!");
+                } else if (updatedItem === null) {
+                    await roomService.deleteRoomCategory(selectedItem.id);
+                    toast.success("Xóa hạng phòng thành công!");
+                } else if (formMode === FORM_MODES.EDIT) {
+                    await roomService.updateRoomCategory(selectedItem.id, updatedItem);
+                    toast.success("Cập nhật hạng phòng thành công!");
+                }
             } else {
-                setCategories(
-                    categories.map((cat) =>
-                        cat.id === updatedItem.id ? updatedItem : cat
-                    )
-                );
+                if (formMode === FORM_MODES.ADD) {
+                    await roomService.addRoom(updatedItem);
+                    toast.success("Thêm phòng thành công!");
+                } else if (updatedItem === null) {
+                    await roomService.deleteRoom(selectedItem.id);
+                    toast.success("Xóa phòng thành công!");
+                } else if (formMode === FORM_MODES.EDIT) {
+                    await roomService.updateRoom(selectedItem.id, updatedItem);
+                    toast.success("Cập nhật phòng thành công!");
+                }
             }
-        } else {
-            if (formMode === "add") {
-                setRooms([...rooms, updatedItem]);
-            } else if (updatedItem === null) {
-                setRooms(rooms.filter((room) => room.id !== selectedItem.id));
-            } else if (updatedItem.mode === "edit") {
-                setFormMode("edit");
-                setSelectedItem(updatedItem);
-                return;
-            } else {
-                setRooms(rooms.map((room) => (room.id === updatedItem.id ? updatedItem : room)));
-            }
+            await fetchData();
+        } catch (error) {
+            console.error('Error saving data:', error);
+            const errorMessage = error.response?.data?.message || "Có lỗi xảy ra khi lưu dữ liệu!";
+            toast.error(errorMessage);
+        } finally {
+            handleCloseForm();
         }
-        await fetchData();
-        handleCloseForm();
     };
 
-    if (loading) {
+    const { isLoading, errorMessage, selectedTab, categories, roomCounts, isFormOpen, formMode, formType, selectedItem } = state;
+
+    if (isLoading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
                 <CircularProgress />
@@ -171,13 +204,73 @@ const RoomCategoryList = () => {
         );
     }
 
-    if (error) {
+    if (errorMessage) {
         return (
             <Box sx={{ p: 3 }}>
-                <Typography color="error">{error}</Typography>
+                <Typography color="error">{errorMessage}</Typography>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={fetchData}
+                    sx={{ mt: 2 }}
+                >
+                    Thử lại
+                </Button>
             </Box>
         );
     }
+
+    const renderCategoryRow = (category) => (
+        <TableRow
+            key={category.id}
+            onClick={() => handleOpenForm(FORM_MODES.VIEW, FORM_TYPES.CATEGORY, category)}
+            sx={{ cursor: "pointer" }}
+        >
+            <TableCell>
+                <Checkbox />
+            </TableCell>
+            <TableCell>{category.code}</TableCell>
+            <TableCell>{category.name}</TableCell>
+            <TableCell>{category.description || "Không có mô tả"}</TableCell>
+            <TableCell>{roomCounts[category.id] || 0}</TableCell>
+            <TableCell>
+                {category.standardAdultCapacity}/{category.maxAdultCapacity}
+            </TableCell>
+            <TableCell>
+                {category.standardChildCapacity}/{category.maxChildCapacity}
+            </TableCell>
+            <TableCell>
+                {(category.hourlyPrice ?? 0).toLocaleString("vi-VN")}
+            </TableCell>
+            <TableCell>
+                {(category.dailyPrice ?? 0).toLocaleString("vi-VN")}
+            </TableCell>
+            <TableCell>
+                {(category.overnightPrice ?? 0).toLocaleString("vi-VN")}
+            </TableCell>
+            <TableCell>
+                {(category.earlyCheckinFee ?? 0).toLocaleString("vi-VN")}
+            </TableCell>
+            <TableCell>
+                {(category.lateCheckoutFee ?? 0).toLocaleString("vi-VN")}
+            </TableCell>
+            <TableCell>
+                {category.status === ROOM_STATUS.ACTIVE ? "Đang kinh doanh" : "Ngừng kinh doanh"}
+            </TableCell>
+            <TableCell>
+                <Button
+                    variant="text"
+                    color="primary"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenForm(FORM_MODES.EDIT, FORM_TYPES.CATEGORY, category);
+                    }}
+                >
+                    Chỉnh sửa
+                </Button>
+            </TableCell>
+        </TableRow>
+    );
 
     return (
         <Box sx={{ p: 2 }}>
@@ -191,7 +284,10 @@ const RoomCategoryList = () => {
                         variant="contained"
                         color="success"
                         onClick={() =>
-                            handleOpenForm("add", selectedTab === 0 ? "category" : "room")
+                            handleOpenForm(
+                                FORM_MODES.ADD,
+                                selectedTab === 0 ? FORM_TYPES.CATEGORY : FORM_TYPES.ROOM
+                            )
                         }
                         sx={{ mr: 1 }}
                     >
@@ -210,10 +306,15 @@ const RoomCategoryList = () => {
                                 </TableCell>
                                 <TableCell>Mã hạng phòng</TableCell>
                                 <TableCell>Tên hạng phòng</TableCell>
+                                <TableCell>Mô tả</TableCell>
                                 <TableCell>Số lượng phòng</TableCell>
+                                <TableCell>Sức chứa người lớn (Tiêu chuẩn/Tối đa)</TableCell>
+                                <TableCell>Sức chứa trẻ em (Tiêu chuẩn/Tối đa)</TableCell>
                                 <TableCell>Giá giờ</TableCell>
                                 <TableCell>Giá cả ngày</TableCell>
                                 <TableCell>Giá qua đêm</TableCell>
+                                <TableCell>Phí check-in sớm</TableCell>
+                                <TableCell>Phí check-out muộn</TableCell>
                                 <TableCell>Trạng thái</TableCell>
                                 <TableCell />
                             </TableRow>
@@ -221,66 +322,39 @@ const RoomCategoryList = () => {
                         <TableBody>
                             {categories.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={9} align="center">
+                                    <TableCell colSpan={14} align="center">
                                         Không có dữ liệu để hiển thị.
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                categories.map((category) => (
-                                    <TableRow
-                                        key={category.id}
-                                        onClick={() => handleOpenForm("view", "category", category)}
-                                        sx={{ cursor: "pointer" }}
-                                    >
-                                        <TableCell>
-                                            <Checkbox />
-                                        </TableCell>
-                                        <TableCell>{category.room_category_code}</TableCell>
-                                        <TableCell>{category.room_category_name}</TableCell>
-                                        <TableCell>{getRoomCount(category.room_category_id)}</TableCell>
-                                        <TableCell>
-                                            {category.hourly_price.toLocaleString("vi-VN")}
-                                        </TableCell>
-                                        <TableCell>
-                                            {category.daily_price.toLocaleString("vi-VN")}
-                                        </TableCell>
-                                        <TableCell>
-                                            {category.overnight_price.toLocaleString("vi-VN")}
-                                        </TableCell>
-                                        <TableCell>
-                                            {category.status === "ACTIVE" ? "Đang kinh doanh" : "Ngừng kinh doanh"}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Button variant="text" color="primary">
-                                                Chỉnh sửa
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                categories.map(renderCategoryRow)
                             )}
                         </TableBody>
                     </Table>
                 </TableContainer>
             )}
 
-            {selectedTab === 1 && (
-                <RoomList
-                    rooms={rooms}
-                    categories={categories}
-                    onOpenForm={(mode, item) => handleOpenForm(mode, "room", item)}
+            {selectedTab === 1 && <RoomList onOpenForm={handleOpenForm} onSave={handleSave} />}
+
+            {/* Hiển thị form dựa trên formType */}
+            {isFormOpen && formType === FORM_TYPES.CATEGORY && (
+                <RoomCategoryForm
+                    initialData={selectedItem}
+                    onClose={handleCloseForm}
                     onSave={handleSave}
                 />
             )}
-
-            <RoomForm
-                open={openForm}
-                onClose={handleCloseForm}
-                mode={formMode}
-                type={formType}
-                initialData={selectedItem}
-                onSave={handleSave}
-                categories={categories}
-            />
+            {isFormOpen && formType === FORM_TYPES.ROOM && (
+                <RoomForm
+                    open={isFormOpen}
+                    onClose={handleCloseForm}
+                    mode={formMode}
+                    type={formType}
+                    initialData={selectedItem}
+                    onSave={handleSave}
+                    categories={categories}
+                />
+            )}
         </Box>
     );
 };

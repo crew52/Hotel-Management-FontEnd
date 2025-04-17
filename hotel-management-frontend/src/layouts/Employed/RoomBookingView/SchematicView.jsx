@@ -21,7 +21,7 @@ export default function SchematicView({ onBookingOpen, onFilterOpen, onViewModeC
         const fetchRooms = async () => {
             try {
                 const res = await RoomViewService.getAllRoomView();
-                const roomData = res.data.content;
+                const roomData = res.data.content || [];
                 setRooms(roomData);
                 setAllRooms(roomData);
             } catch (err) {
@@ -60,34 +60,22 @@ export default function SchematicView({ onBookingOpen, onFilterOpen, onViewModeC
 
     const getRoomStatusCounts = () => {
         const counts = {
-            pendingConfirmation: 0,
-            checkedOut: 0,
-            preBooked: 0,
             soonCheckIn: 0,
             inUse: 0,
             soonCheckOut: 0,
             overdue: 0,
-            pendingInvoice: 0,
             available: 0,
-            cleaning: 0,
             maintenance: 0,
-            unavailable: 0,
         };
 
         allRooms.forEach((room) => {
             switch (room.status) {
                 case 'AVAILABLE': counts.available += 1; break;
                 case 'UPCOMING': counts.soonCheckIn += 1; break;
-                case 'OCCUPIED': counts.inUse += 1; break;
-                case 'CLEANING': counts.cleaning += 1; break;
-                case 'MAINTENANCE': counts.maintenance += 1; break;
-                case 'RESERVED': counts.preBooked += 1; break;
-                case 'UNAVAILABLE': counts.unavailable += 1; break;
+                case 'IN_USE': counts.inUse += 1; break;
                 case 'CHECKOUT_SOON': counts.soonCheckOut += 1; break;
+                case 'MAINTENANCE': counts.maintenance += 1; break;
                 case 'OVERDUE': counts.overdue += 1; break;
-                case 'PENDING_CONFIRMATION': counts.pendingConfirmation += 1; break;
-                case 'CHECKED_OUT': counts.checkedOut += 1; break;
-                case 'PENDING_INVOICE': counts.pendingInvoice += 1; break;
                 default: break;
             }
         });
@@ -95,10 +83,19 @@ export default function SchematicView({ onBookingOpen, onFilterOpen, onViewModeC
         return counts;
     };
 
+    const getRoomBackgroundColor = (status) => {
+        switch (status) {
+            case 'IN_USE': return '#25b62c';
+            case 'UPCOMING': return '#c6be77';
+            default: return '#FFFFFF';
+        }
+    };
+
     const handleStatusFilter = async (status) => {
         try {
             const response = await RoomViewService.searchRoomView({ status });
-            setRooms(response.data.content);
+            const roomData = response.data.content || [];
+            setRooms(roomData);
         } catch (error) {
             console.error('Error filtering rooms:', error);
         }
@@ -155,33 +152,61 @@ export default function SchematicView({ onBookingOpen, onFilterOpen, onViewModeC
                         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 2 }}>
                             {rooms.map((room) => {
                                 const statusInfo = getStatusLabelAndColor(room.status, room.isClean);
+                                const backgroundColor = getRoomBackgroundColor(room.status);
                                 return (
-                                    <Card key={room.id} sx={{ borderRadius: 2, position: 'relative' }}>
+                                    <Card
+                                        key={room.id}
+                                        sx={{
+                                            borderRadius: 2,
+                                            position: 'relative',
+                                            backgroundColor: backgroundColor,
+                                            color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF',
+                                        }}
+                                    >
                                         <CardContent sx={{ p: 1.5 }}>
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                                <Chip label={statusInfo.label} color={statusInfo.color} size="small" />
-                                                <IconButton size="small"><MoreVertIcon /></IconButton>
+                                                <Chip
+                                                    label={statusInfo.label}
+                                                    color={statusInfo.color}
+                                                    size="small"
+                                                    sx={{
+                                                        color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF',
+                                                        backgroundColor: backgroundColor === '#FFFFFF' ? undefined : 'rgba(0, 0, 0, 0.2)',
+                                                    }}
+                                                />
+                                                <IconButton size="small">
+                                                    <MoreVertIcon sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }} />
+                                                </IconButton>
                                             </Box>
                                             <Box sx={{ mb: 1 }}>
-                                                <Typography variant="h6" sx={{ textAlign: 'center' }}>
+                                                <Typography variant="h6" sx={{ textAlign: 'left', color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }}>
                                                     P.{room.id.toString().padStart(3, '0')}
                                                 </Typography>
                                             </Box>
-                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                                {room.roomCategory.name}
+                                            <Typography
+                                                variant="body2"
+                                                sx={{ mb: 1, color: backgroundColor === '#FFFFFF' ? 'text.secondary' : '#FFFFFF' }}
+                                            >
+                                                {room.roomCategory?.name || 'Không có loại phòng'}
                                             </Typography>
                                             <Box sx={{ display: 'flex', gap: 1 }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                    <AccessTimeIcon fontSize="small" />
-                                                    <Typography variant="body2">{room.roomCategory.hourlyPrice.toLocaleString()}đ</Typography>
+                                                    <AccessTimeIcon fontSize="small" sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }} />
+                                                    <Typography variant="body2" sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }}>
+                                                        {room.roomCategory?.hourlyPrice?.toLocaleString('vi-VN') || '0'}đ
+                                                    </Typography>
                                                 </Box>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                    <WbSunnyIcon fontSize="small" />
-                                                    <Typography variant="body2">{room.roomCategory.dailyPrice.toLocaleString()}đ</Typography>
+                                                    <WbSunnyIcon fontSize="small" sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }} />
+                                                    <Typography variant="body2" sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }}>
+                                                        {room.roomCategory?.dailyPrice?.toLocaleString('vi-VN') || '0'}đ
+                                                    </Typography>
                                                 </Box>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                    <Brightness2Icon fontSize="small" />
-                                                    <Typography variant="body2">{room.roomCategory.overnightPrice.toLocaleString()}đ</Typography>
+                                                    <Brightness2Icon fontSize="small" sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }} />
+                                                    <Typography variant="body2" sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }}>
+                                                        {room.roomCategory?.overnightPrice?.toLocaleString('vi-VN') || '0'}đ
+                                                    </Typography>
                                                 </Box>
                                             </Box>
                                         </CardContent>

@@ -18,7 +18,7 @@ export default function GridView({ onBookingOpen, onFilterOpen, onViewModeChange
         const fetchRooms = async () => {
             try {
                 const res = await RoomViewService.getAllRoomView();
-                const roomData = res.data.content;
+                const roomData = res.data.content || [];
                 setRooms(roomData);
                 setAllRooms(roomData);
             } catch (err) {
@@ -57,34 +57,22 @@ export default function GridView({ onBookingOpen, onFilterOpen, onViewModeChange
 
     const getRoomStatusCounts = () => {
         const counts = {
-            pendingConfirmation: 0,
-            checkedOut: 0,
-            preBooked: 0,
             soonCheckIn: 0,
             inUse: 0,
             soonCheckOut: 0,
             overdue: 0,
-            pendingInvoice: 0,
             available: 0,
-            cleaning: 0,
             maintenance: 0,
-            unavailable: 0,
         };
 
         allRooms.forEach((room) => {
             switch (room.status) {
                 case 'AVAILABLE': counts.available += 1; break;
                 case 'UPCOMING': counts.soonCheckIn += 1; break;
-                case 'OCCUPIED': counts.inUse += 1; break;
-                case 'CLEANING': counts.cleaning += 1; break;
-                case 'MAINTENANCE': counts.maintenance += 1; break;
-                case 'RESERVED': counts.preBooked += 1; break;
-                case 'UNAVAILABLE': counts.unavailable += 1; break;
+                case 'IN_USE': counts.inUse += 1; break;
                 case 'CHECKOUT_SOON': counts.soonCheckOut += 1; break;
+                case 'MAINTENANCE': counts.maintenance += 1; break;
                 case 'OVERDUE': counts.overdue += 1; break;
-                case 'PENDING_CONFIRMATION': counts.pendingConfirmation += 1; break;
-                case 'CHECKED_OUT': counts.checkedOut += 1; break;
-                case 'PENDING_INVOICE': counts.pendingInvoice += 1; break;
                 default: break;
             }
         });
@@ -93,15 +81,28 @@ export default function GridView({ onBookingOpen, onFilterOpen, onViewModeChange
     };
 
     const getBookingData = (room, index) => {
+        const roomCategory = room.roomCategory || {};
+        const dailyPrice = roomCategory.dailyPrice || 0;
+        const checkInTime = room.startDate
+            ? new Date(room.startDate[0], room.startDate[1] - 1, room.startDate[2]).toLocaleDateString('vi-VN')
+            : '';
+        const checkOutTime = room.checkInDuration && room.startDate
+            ? new Date(
+                room.startDate[0],
+                room.startDate[1] - 1,
+                room.startDate[2] + room.checkInDuration
+            ).toLocaleDateString('vi-VN')
+            : '';
+
         return {
             stt: index + 1,
             bookingCode: `DP${room.id.toString().padStart(6, '0')}`,
             channelCode: "",
             room: `P.${room.id.toString().padStart(3, '0')}`,
             customer: "Khách lẻ\nNhập ghi chú",
-            checkInTime: "",
-            checkOutTime: "",
-            total: room.roomCategory.dailyPrice.toLocaleString(),
+            checkInTime,
+            checkOutTime,
+            total: dailyPrice.toLocaleString('vi-VN'),
             paid: "0",
             action: getActionButton(statusToAction(room.status, room.isClean)),
         };
@@ -125,7 +126,8 @@ export default function GridView({ onBookingOpen, onFilterOpen, onViewModeChange
     const handleStatusFilter = async (status) => {
         try {
             const response = await RoomViewService.searchRoomView({ status });
-            setRooms(response.data.content);
+            const roomData = response.data.content || [];
+            setRooms(roomData);
         } catch (error) {
             console.error('Error filtering rooms:', error);
         }

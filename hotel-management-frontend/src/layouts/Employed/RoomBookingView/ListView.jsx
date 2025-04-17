@@ -49,34 +49,22 @@ export default function ListView({ onBookingOpen, onFilterOpen, onViewModeChange
 
     const getRoomStatusCounts = () => {
         const counts = {
-            pendingConfirmation: 0,
-            checkedOut: 0,
-            preBooked: 0,
             soonCheckIn: 0,
             inUse: 0,
             soonCheckOut: 0,
             overdue: 0,
-            pendingInvoice: 0,
             available: 0,
-            cleaning: 0,
             maintenance: 0,
-            unavailable: 0,
         };
 
         allRooms.forEach((room) => {
             switch (room.status) {
                 case 'AVAILABLE': counts.available += 1; break;
                 case 'UPCOMING': counts.soonCheckIn += 1; break;
-                case 'OCCUPIED': counts.inUse += 1; break;
-                case 'CLEANING': counts.cleaning += 1; break;
-                case 'MAINTENANCE': counts.maintenance += 1; break;
-                case 'RESERVED': counts.preBooked += 1; break;
-                case 'UNAVAILABLE': counts.unavailable += 1; break;
+                case 'IN_USE': counts.inUse += 1; break;
                 case 'CHECKOUT_SOON': counts.soonCheckOut += 1; break;
+                case 'MAINTENANCE': counts.maintenance += 1; break;
                 case 'OVERDUE': counts.overdue += 1; break;
-                case 'PENDING_CONFIRMATION': counts.pendingConfirmation += 1; break;
-                case 'CHECKED_OUT': counts.checkedOut += 1; break;
-                case 'PENDING_INVOICE': counts.pendingInvoice += 1; break;
                 default: break;
             }
         });

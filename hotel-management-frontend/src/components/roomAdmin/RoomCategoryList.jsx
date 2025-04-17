@@ -18,11 +18,11 @@ import {
     CircularProgress,
     Typography,
 } from "@mui/material";
-import roomService from "../../services/RoomService.js"; // Sửa tên import nếu cần
+import roomService from "../../services/RoomService.js";
 import { toast } from "react-toastify";
 import RoomList from "./RoomList";
 import RoomForm from "./RoomForm";
-import RoomCategoryForm from "./RoomCategoryForm"; // Import RoomCategoryForm
+import RoomCategoryForm from "./RoomCategoryForm";
 
 const FORM_MODES = {
     ADD: 'add',
@@ -163,24 +163,24 @@ const RoomCategoryList = () => {
         try {
             if (formType === FORM_TYPES.CATEGORY) {
                 if (formMode === FORM_MODES.ADD) {
-                    await roomService.addRoomCategory(updatedItem);
+                    // Không gọi lại API, sử dụng updatedItem từ RoomCategoryForm
                     toast.success("Thêm hạng phòng thành công!");
                 } else if (updatedItem === null) {
                     await roomService.deleteRoomCategory(selectedItem.id);
                     toast.success("Xóa hạng phòng thành công!");
                 } else if (formMode === FORM_MODES.EDIT) {
-                    await roomService.updateRoomCategory(selectedItem.id, updatedItem);
+                    // Không gọi lại API, sử dụng updatedItem từ RoomCategoryForm
                     toast.success("Cập nhật hạng phòng thành công!");
                 }
             } else {
                 if (formMode === FORM_MODES.ADD) {
-                    await roomService.addRoom(updatedItem);
+                    // Không gọi lại API, sử dụng updatedItem từ RoomForm
                     toast.success("Thêm phòng thành công!");
                 } else if (updatedItem === null) {
                     await roomService.deleteRoom(selectedItem.id);
                     toast.success("Xóa phòng thành công!");
                 } else if (formMode === FORM_MODES.EDIT) {
-                    await roomService.updateRoom(selectedItem.id, updatedItem);
+                    // Không gọi lại API, sử dụng updatedItem từ RoomForm
                     toast.success("Cập nhật phòng thành công!");
                 }
             }
@@ -336,7 +336,6 @@ const RoomCategoryList = () => {
 
             {selectedTab === 1 && <RoomList onOpenForm={handleOpenForm} onSave={handleSave} />}
 
-            {/* Hiển thị form dựa trên formType */}
             {isFormOpen && formType === FORM_TYPES.CATEGORY && (
                 <RoomCategoryForm
                     initialData={selectedItem}

@@ -1,12 +1,11 @@
 import React from 'react';
-import Box from '@mui/material/Box';
+import { Box } from '@mui/material';
 import SchematicView from './SchematicView';
 import GridView from './GridView';
 import ListView from './ListView';
 import BookingDialog from './BookingDialog';
 import FilterDialog from './FilterDialog';
 import useRoomBooking from "../hooks/useRoomBooking.js";
-
 
 export default function RoomBookingView() {
     const {
@@ -43,6 +42,7 @@ export default function RoomBookingView() {
                     onViewModeChange={handleViewModeChange}
                 />
             )}
+
             <BookingDialog open={bookingOpen} onClose={handleBookingClose} />
             <FilterDialog open={filterOpen} onClose={handleFilterClose} />
         </Box>

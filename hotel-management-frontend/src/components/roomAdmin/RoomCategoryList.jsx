@@ -19,7 +19,13 @@ import {
     TextField,
     MenuItem,
     Grid,
+    IconButton,
+    Menu,
+    MenuItem as MuiMenuItem,
+    Checkbox,
+    FormControlLabel,
 } from "@mui/material";
+import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import roomService from "../../services/RoomService.js";
 import { toast } from "react-toastify";
 import RoomList from "./RoomList";
@@ -61,7 +67,23 @@ const INITIAL_STATE = {
         maxDailyPrice: '',
         minOvernightPrice: '',
         maxOvernightPrice: '',
-    }
+    },
+    visibleColumns: {
+        code: true,
+        name: true,
+        description: true,
+        roomCount: true,
+        adultCapacity: true,
+        childCapacity: true,
+        hourlyPrice: true,
+        dailyPrice: true,
+        overnightPrice: true,
+        earlyCheckinFee: true,
+        lateCheckoutFee: true,
+        status: true,
+        actions: true,
+    },
+    anchorEl: null,
 };
 
 const RoomCategoryList = () => {
@@ -249,7 +271,27 @@ const RoomCategoryList = () => {
         }));
     };
 
-    const { isLoading, errorMessage, selectedTab, categories, roomCounts, isFormOpen, formMode, formType, selectedItem, filters } = state;
+    const handleColumnVisibilityChange = (event) => {
+        const { name, checked } = event.target;
+        setState(prev => ({
+            ...prev,
+            visibleColumns: {
+                ...prev.visibleColumns,
+                [name]: checked
+            }
+        }));
+    };
+
+    const handleOpenColumnMenu = (event) => {
+        setState(prev => ({ ...prev, anchorEl: event.currentTarget }));
+    };
+
+    const handleCloseColumnMenu = () => {
+        setState(prev => ({ ...prev, anchorEl: null }));
+    };
+
+    const { isLoading, errorMessage, selectedTab, categories, roomCounts, isFormOpen, formMode, formType, selectedItem, filters, visibleColumns, anchorEl } = state;
+    const open = Boolean(anchorEl);
 
     if (isLoading) {
         return (
@@ -279,60 +321,86 @@ const RoomCategoryList = () => {
                 "&:hover": { backgroundColor: "#f5f5f5" }
             }}
         >
-            <TableCell sx={{ width: "100px" }}>{category.code}</TableCell>
-            <TableCell sx={{ width: "150px" }}>{category.name}</TableCell>
-            <TableCell sx={{ width: "200px" }}>{category.description || "Không có mô tả"}</TableCell>
-            <TableCell sx={{ width: "80px", textAlign: "center" }}>{roomCounts[category.id] || 0}</TableCell>
-            <TableCell sx={{ width: "120px", textAlign: "center" }}>
-                {category.standardAdultCapacity}/{category.maxAdultCapacity}
-            </TableCell>
-            <TableCell sx={{ width: "120px", textAlign: "center" }}>
-                {category.standardChildCapacity}/{category.maxChildCapacity}
-            </TableCell>
-            <TableCell sx={{ width: "100px", textAlign: "right" }}>
-                {(category.hourlyPrice ?? 0).toLocaleString("vi-VN")}
-            </TableCell>
-            <TableCell sx={{ width: "100px", textAlign: "right" }}>
-                {(category.dailyPrice ?? 0).toLocaleString("vi-VN")}
-            </TableCell>
-            <TableCell sx={{ width: "100px", textAlign: "right" }}>
-                {(category.overnightPrice ?? 0).toLocaleString("vi-VN")}
-            </TableCell>
-            <TableCell sx={{ width: "100px", textAlign: "right" }}>
-                {(category.earlyCheckinFee ?? 0).toLocaleString("vi-VN")}
-            </TableCell>
-            <TableCell sx={{ width: "100px", textAlign: "right" }}>
-                {(category.lateCheckoutFee ?? 0).toLocaleString("vi-VN")}
-            </TableCell>
-            <TableCell sx={{ width: "100px" }}>
-                {category.status === ROOM_STATUS.ACTIVE ? "Đang kinh doanh" : "Ngừng kinh doanh"}
-            </TableCell>
-            <TableCell sx={{ width: "180px" }}>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenForm(FORM_MODES.EDIT, FORM_TYPES.CATEGORY, category);
-                    }}
-                    sx={{ mr: 1, width: "80px" }}
-                >
-                    Chỉnh sửa
-                </Button>
-                <Button
-                    variant="contained"
-                    color="error"
-                    size="small"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(category.id);
-                    }}
-                    sx={{ width: "80px" }}
-                >
-                    Xóa
-                </Button>
-            </TableCell>
+            {visibleColumns.code && (
+                <TableCell sx={{ width: "100px" }}>{category.code}</TableCell>
+            )}
+            {visibleColumns.name && (
+                <TableCell sx={{ width: "150px" }}>{category.name}</TableCell>
+            )}
+            {visibleColumns.description && (
+                <TableCell sx={{ width: "200px" }}>{category.description || "Không có mô tả"}</TableCell>
+            )}
+            {visibleColumns.roomCount && (
+                <TableCell sx={{ width: "80px", textAlign: "center" }}>{roomCounts[category.id] || 0}</TableCell>
+            )}
+            {visibleColumns.adultCapacity && (
+                <TableCell sx={{ width: "120px", textAlign: "center" }}>
+                    {category.standardAdultCapacity}/{category.maxAdultCapacity}
+                </TableCell>
+            )}
+            {visibleColumns.childCapacity && (
+                <TableCell sx={{ width: "120px", textAlign: "center" }}>
+                    {category.standardChildCapacity}/{category.maxChildCapacity}
+                </TableCell>
+            )}
+            {visibleColumns.hourlyPrice && (
+                <TableCell sx={{ width: "100px", textAlign: "right" }}>
+                    {(category.hourlyPrice ?? 0).toLocaleString("vi-VN")}
+                </TableCell>
+            )}
+            {visibleColumns.dailyPrice && (
+                <TableCell sx={{ width: "100px", textAlign: "right" }}>
+                    {(category.dailyPrice ?? 0).toLocaleString("vi-VN")}
+                </TableCell>
+            )}
+            {visibleColumns.overnightPrice && (
+                <TableCell sx={{ width: "100px", textAlign: "right" }}>
+                    {(category.overnightPrice ?? 0).toLocaleString("vi-VN")}
+                </TableCell>
+            )}
+            {visibleColumns.earlyCheckinFee && (
+                <TableCell sx={{ width: "100px", textAlign: "right" }}>
+                    {(category.earlyCheckinFee ?? 0).toLocaleString("vi-VN")}
+                </TableCell>
+            )}
+            {visibleColumns.lateCheckoutFee && (
+                <TableCell sx={{ width: "100px", textAlign: "right" }}>
+                    {(category.lateCheckoutFee ?? 0).toLocaleString("vi-VN")}
+                </TableCell>
+            )}
+            {visibleColumns.status && (
+                <TableCell sx={{ width: "100px" }}>
+                    {category.status === ROOM_STATUS.ACTIVE ? "Đang kinh doanh" : "Ngừng kinh doanh"}
+                </TableCell>
+            )}
+            {visibleColumns.actions && (
+                <TableCell sx={{ width: "180px" }}>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenForm(FORM_MODES.EDIT, FORM_TYPES.CATEGORY, category);
+                        }}
+                        sx={{ mr: 1, width: "80px" }}
+                    >
+                        Chỉnh sửa
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        size="small"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(category.id);
+                        }}
+                        sx={{ width: "80px" }}
+                    >
+                        Xóa
+                    </Button>
+                </TableCell>
+            )}
         </TableRow>
     );
 
@@ -343,13 +411,203 @@ const RoomCategoryList = () => {
                     <Tab label="Hạng phòng" />
                     <Tab label="Danh sách phòng" />
                 </Tabs>
-                <Button
-                    variant="contained"
-                    color="success"
-                    onClick={() => handleOpenForm(FORM_MODES.ADD, selectedTab === 0 ? FORM_TYPES.CATEGORY : FORM_TYPES.ROOM)}
-                >
-                    Thêm mới
-                </Button>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <IconButton
+                        onClick={handleOpenColumnMenu}
+                        color="primary"
+                        title="Chọn cột hiển thị"
+                    >
+                        <ViewColumnIcon />
+                    </IconButton>
+                    <Menu
+                        anchorEl={anchorEl}
+                        open={open}
+                        onClose={handleCloseColumnMenu}
+                        PaperProps={{
+                            style: {
+                                maxHeight: 400,
+                                width: '250px',
+                            },
+                        }}
+                    >
+                        <MuiMenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={visibleColumns.code}
+                                        onChange={handleColumnVisibilityChange}
+                                        name="code"
+                                        size="small"
+                                    />
+                                }
+                                label="Mã hạng phòng"
+                            />
+                        </MuiMenuItem>
+                        <MuiMenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={visibleColumns.name}
+                                        onChange={handleColumnVisibilityChange}
+                                        name="name"
+                                        size="small"
+                                    />
+                                }
+                                label="Tên hạng phòng"
+                            />
+                        </MuiMenuItem>
+                        <MuiMenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={visibleColumns.description}
+                                        onChange={handleColumnVisibilityChange}
+                                        name="description"
+                                        size="small"
+                                    />
+                                }
+                                label="Mô tả"
+                            />
+                        </MuiMenuItem>
+                        <MuiMenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={visibleColumns.roomCount}
+                                        onChange={handleColumnVisibilityChange}
+                                        name="roomCount"
+                                        size="small"
+                                    />
+                                }
+                                label="Số lượng phòng"
+                            />
+                        </MuiMenuItem>
+                        <MuiMenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={visibleColumns.adultCapacity}
+                                        onChange={handleColumnVisibilityChange}
+                                        name="adultCapacity"
+                                        size="small"
+                                    />
+                                }
+                                label="Sức chứa người lớn"
+                            />
+                        </MuiMenuItem>
+                        <MuiMenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={visibleColumns.childCapacity}
+                                        onChange={handleColumnVisibilityChange}
+                                        name="childCapacity"
+                                        size="small"
+                                    />
+                                }
+                                label="Sức chứa trẻ em"
+                            />
+                        </MuiMenuItem>
+                        <MuiMenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={visibleColumns.hourlyPrice}
+                                        onChange={handleColumnVisibilityChange}
+                                        name="hourlyPrice"
+                                        size="small"
+                                    />
+                                }
+                                label="Giá giờ"
+                            />
+                        </MuiMenuItem>
+                        <MuiMenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={visibleColumns.dailyPrice}
+                                        onChange={handleColumnVisibilityChange}
+                                        name="dailyPrice"
+                                        size="small"
+                                    />
+                                }
+                                label="Giá cả ngày"
+                            />
+                        </MuiMenuItem>
+                        <MuiMenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={visibleColumns.overnightPrice}
+                                        onChange={handleColumnVisibilityChange}
+                                        name="overnightPrice"
+                                        size="small"
+                                    />
+                                }
+                                label="Giá qua đêm"
+                            />
+                        </MuiMenuItem>
+                        <MuiMenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={visibleColumns.earlyCheckinFee}
+                                        onChange={handleColumnVisibilityChange}
+                                        name="earlyCheckinFee"
+                                        size="small"
+                                    />
+                                }
+                                label="Phí check-in sớm"
+                            />
+                        </MuiMenuItem>
+                        <MuiMenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={visibleColumns.lateCheckoutFee}
+                                        onChange={handleColumnVisibilityChange}
+                                        name="lateCheckoutFee"
+                                        size="small"
+                                    />
+                                }
+                                label="Phí check-out muộn"
+                            />
+                        </MuiMenuItem>
+                        <MuiMenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={visibleColumns.status}
+                                        onChange={handleColumnVisibilityChange}
+                                        name="status"
+                                        size="small"
+                                    />
+                                }
+                                label="Trạng thái"
+                            />
+                        </MuiMenuItem>
+                        <MuiMenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={visibleColumns.actions}
+                                        onChange={handleColumnVisibilityChange}
+                                        name="actions"
+                                        size="small"
+                                    />
+                                }
+                                label="Hành động"
+                            />
+                        </MuiMenuItem>
+                    </Menu>
+                    <Button
+                        variant="contained"
+                        color="success"
+                        onClick={() => handleOpenForm(FORM_MODES.ADD, selectedTab === 0 ? FORM_TYPES.CATEGORY : FORM_TYPES.ROOM)}
+                    >
+                        Thêm mới
+                    </Button>
+                </Box>
             </Box>
 
             {selectedTab === 0 && (
@@ -465,25 +723,51 @@ const RoomCategoryList = () => {
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell sx={{ fontWeight: "bold" }}>Mã hạng phòng</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold" }}>Tên hạng phòng</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold" }}>Mô tả</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold", textAlign: "center" }}>Số lượng phòng</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold", textAlign: "center" }}>Sức chứa người lớn</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold", textAlign: "center" }}>Sức chứa trẻ em</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Giá giờ</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Giá cả ngày</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Giá qua đêm</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Phí check-in sớm</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Phí check-out muộn</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold" }}>Trạng thái</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold" }}>Hành động</TableCell>
+                                    {visibleColumns.code && (
+                                        <TableCell sx={{ fontWeight: "bold" }}>Mã hạng phòng</TableCell>
+                                    )}
+                                    {visibleColumns.name && (
+                                        <TableCell sx={{ fontWeight: "bold" }}>Tên hạng phòng</TableCell>
+                                    )}
+                                    {visibleColumns.description && (
+                                        <TableCell sx={{ fontWeight: "bold" }}>Mô tả</TableCell>
+                                    )}
+                                    {visibleColumns.roomCount && (
+                                        <TableCell sx={{ fontWeight: "bold", textAlign: "center" }}>Số lượng phòng</TableCell>
+                                    )}
+                                    {visibleColumns.adultCapacity && (
+                                        <TableCell sx={{ fontWeight: "bold", textAlign: "center" }}>Sức chứa người lớn</TableCell>
+                                    )}
+                                    {visibleColumns.childCapacity && (
+                                        <TableCell sx={{ fontWeight: "bold", textAlign: "center" }}>Sức chứa trẻ em</TableCell>
+                                    )}
+                                    {visibleColumns.hourlyPrice && (
+                                        <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Giá giờ</TableCell>
+                                    )}
+                                    {visibleColumns.dailyPrice && (
+                                        <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Giá cả ngày</TableCell>
+                                    )}
+                                    {visibleColumns.overnightPrice && (
+                                        <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Giá qua đêm</TableCell>
+                                    )}
+                                    {visibleColumns.earlyCheckinFee && (
+                                        <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Phí check-in sớm</TableCell>
+                                    )}
+                                    {visibleColumns.lateCheckoutFee && (
+                                        <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Phí check-out muộn</TableCell>
+                                    )}
+                                    {visibleColumns.status && (
+                                        <TableCell sx={{ fontWeight: "bold" }}>Trạng thái</TableCell>
+                                    )}
+                                    {visibleColumns.actions && (
+                                        <TableCell sx={{ fontWeight: "bold" }}>Hành động</TableCell>
+                                    )}
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {categories.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={13} align="center">
+                                        <TableCell colSpan={Object.values(visibleColumns).filter(Boolean).length} align="center">
                                             Không có dữ liệu để hiển thị.
                                         </TableCell>
                                     </TableRow>

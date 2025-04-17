@@ -3,7 +3,7 @@
 import React from "react";
 import { Box, TextField, Button, MenuItem, Typography, Grid } from "@mui/material";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import RoomService from "../../services/RoomService.js"; // Sửa tên import nếu cần
+import RoomService from "../../services/RoomService.js";
 import { toast } from "react-toastify";
 
 const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
@@ -44,34 +44,34 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
         if (values.description && values.description.length > 1000) {
             errors.description = "Mô tả tối đa 1000 ký tự";
         }
-        if (values.hourlyPrice === undefined || values.hourlyPrice < 0) {
+        if (values.hourlyPrice < 0) {
             errors.hourlyPrice = "Giá giờ phải lớn hơn hoặc bằng 0";
         }
-        if (values.dailyPrice === undefined || values.dailyPrice < 0) {
+        if (values.dailyPrice < 0) {
             errors.dailyPrice = "Giá cả ngày phải lớn hơn hoặc bằng 0";
         }
-        if (values.overnightPrice === undefined || values.overnightPrice < 0) {
+        if (values.overnightPrice < 0) {
             errors.overnightPrice = "Giá qua đêm phải lớn hơn hoặc bằng 0";
         }
-        if (values.earlyCheckinFee === undefined || values.earlyCheckinFee < 0) {
+        if (values.earlyCheckinFee < 0) {
             errors.earlyCheckinFee = "Phí nhận phòng sớm phải lớn hơn hoặc bằng 0";
         }
-        if (values.lateCheckoutFee === undefined || values.lateCheckoutFee < 0) {
+        if (values.lateCheckoutFee < 0) {
             errors.lateCheckoutFee = "Phí trả phòng trễ phải lớn hơn hoặc bằng 0";
         }
-        if (values.defaultExtraFee === undefined || values.defaultExtraFee < 0) {
+        if (values.defaultExtraFee < 0) {
             errors.defaultExtraFee = "Mức phí phụ thu phải lớn hơn hoặc bằng 0";
         }
-        if (values.standardAdultCapacity === undefined || values.standardAdultCapacity < 0) {
+        if (values.standardAdultCapacity < 0) {
             errors.standardAdultCapacity = "Số người lớn tiêu chuẩn phải lớn hơn hoặc bằng 0";
         }
-        if (values.standardChildCapacity === undefined || values.standardChildCapacity < 0) {
+        if (values.standardChildCapacity < 0) {
             errors.standardChildCapacity = "Số trẻ em tiêu chuẩn phải lớn hơn hoặc bằng 0";
         }
-        if (values.maxAdultCapacity === undefined || values.maxAdultCapacity < 0) {
+        if (values.maxAdultCapacity < 0) {
             errors.maxAdultCapacity = "Số người lớn tối đa phải lớn hơn hoặc bằng 0";
         }
-        if (values.maxChildCapacity === undefined || values.maxChildCapacity < 0) {
+        if (values.maxChildCapacity < 0) {
             errors.maxChildCapacity = "Số trẻ em tối đa phải lớn hơn hoặc bằng 0";
         }
         if (!values.status) {
@@ -87,12 +87,15 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
         try {
             const payload = {
                 ...values,
-                hourlyPrice: values.hourlyPrice !== undefined ? parseFloat(values.hourlyPrice).toFixed(2) : null,
-                dailyPrice: values.dailyPrice !== undefined ? parseFloat(values.dailyPrice).toFixed(2) : null,
-                overnightPrice: values.overnightPrice !== undefined ? parseFloat(values.overnightPrice).toFixed(2) : null,
-                earlyCheckinFee: values.earlyCheckinFee !== undefined ? parseFloat(values.earlyCheckinFee).toFixed(2) : null,
-                lateCheckoutFee: values.lateCheckoutFee !== undefined ? parseFloat(values.lateCheckoutFee).toFixed(2) : null,
-                defaultExtraFee: values.defaultExtraFee !== undefined ? parseFloat(values.defaultExtraFee).toFixed(2) : "0.00",
+                hourlyPrice: values.hourlyPrice !== undefined && values.hourlyPrice !== "" ? parseFloat(values.hourlyPrice) : null,
+                dailyPrice: values.dailyPrice !== undefined && values.dailyPrice !== "" ? parseFloat(values.dailyPrice) : null,
+                overnightPrice: values.overnightPrice !== undefined && values.overnightPrice !== "" ? parseFloat(values.overnightPrice) : null,
+                earlyCheckinFee: values.earlyCheckinFee !== undefined && values.earlyCheckinFee !== "" ? parseFloat(values.earlyCheckinFee) : null,
+                lateCheckoutFee: values.lateCheckoutFee !== undefined && values.lateCheckoutFee !== "" ? parseFloat(values.lateCheckoutFee) : null,
+                defaultExtraFee: values.defaultExtraFee !== undefined && values.defaultExtraFee !== "" ? parseFloat(values.defaultExtraFee) : 0,
+                applyToAllCategories: values.applyToAllCategories ? 1 : 0,
+                description: values.description || null,
+                imgUrl: values.imgUrl || null,
             };
             console.log("Payload before submit:", payload);
 
@@ -102,17 +105,18 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
             } else {
                 response = await RoomService.addRoomCategory(payload);
             }
-            onSave(response.data); // Gọi onSave để cập nhật danh sách
+            // Xóa toast.success tại đây, để RoomCategoryList.jsx xử lý thông báo
+            onSave(response);
         } catch (error) {
             const errorMessage =
                 error.response?.data?.message ||
                 error.response?.data?.errors?.[0]?.defaultMessage ||
                 "Lỗi khi thêm/cập nhật hạng phòng!";
             toast.error(errorMessage);
-            console.error("Error during submit:", error.response?.data);
+            console.error("Error during submit:", error.response?.data || error.message);
         } finally {
             setSubmitting(false);
-            onClose(); // Đóng form sau khi submit
+            onClose();
         }
     };
 
@@ -129,7 +133,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                 {({ isSubmitting, values }) => (
                     <Form>
                         <Grid container spacing={2}>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Field
                                     as={TextField}
                                     label="Mã hạng phòng"
@@ -140,7 +144,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     disabled={isEditMode}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Field
                                     as={TextField}
                                     label="Tên hạng phòng"
@@ -150,7 +154,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     helperText={<ErrorMessage name="name" />}
                                 />
                             </Grid>
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <Field
                                     as={TextField}
                                     label="Mô tả"
@@ -162,7 +166,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     helperText={<ErrorMessage name="description" />}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={4}>
+                            <Grid xs={12} sm={4}>
                                 <Field
                                     as={TextField}
                                     label="Giá giờ"
@@ -173,7 +177,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     helperText={<ErrorMessage name="hourlyPrice" />}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={4}>
+                            <Grid xs={12} sm={4}>
                                 <Field
                                     as={TextField}
                                     label="Giá cả ngày"
@@ -184,7 +188,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     helperText={<ErrorMessage name="dailyPrice" />}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={4}>
+                            <Grid xs={12} sm={4}>
                                 <Field
                                     as={TextField}
                                     label="Giá qua đêm"
@@ -195,7 +199,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     helperText={<ErrorMessage name="overnightPrice" />}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Field
                                     as={TextField}
                                     label="Phí nhận phòng sớm"
@@ -206,7 +210,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     helperText={<ErrorMessage name="earlyCheckinFee" />}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Field
                                     as={TextField}
                                     label="Phí trả phòng trễ"
@@ -217,7 +221,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     helperText={<ErrorMessage name="lateCheckoutFee" />}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Field
                                     as={TextField}
                                     select
@@ -231,7 +235,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     <MenuItem value="PERCENTAGE">Nhân số</MenuItem>
                                 </Field>
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Field
                                     as={TextField}
                                     label="Mức phí phụ thu"
@@ -242,7 +246,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     helperText={<ErrorMessage name="defaultExtraFee" />}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Field
                                     as={TextField}
                                     select
@@ -256,7 +260,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     <MenuItem value={false}>Không</MenuItem>
                                 </Field>
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Field
                                     as={TextField}
                                     select
@@ -270,7 +274,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     <MenuItem value="INACTIVE">Ngừng kinh doanh</MenuItem>
                                 </Field>
                             </Grid>
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <Field
                                     as={TextField}
                                     label="URL hình ảnh"
@@ -281,7 +285,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                 />
                             </Grid>
                             {values.imgUrl && (
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <Typography variant="subtitle1">Hình ảnh</Typography>
                                     <img
                                         src={values.imgUrl}
@@ -290,7 +294,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     />
                                 </Grid>
                             )}
-                            <Grid item xs={12} sm={3}>
+                            <Grid xs={12} sm={3}>
                                 <Field
                                     as={TextField}
                                     label="Số người lớn tiêu chuẩn"
@@ -301,7 +305,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     helperText={<ErrorMessage name="standardAdultCapacity" />}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={3}>
+                            <Grid xs={12} sm={3}>
                                 <Field
                                     as={TextField}
                                     label="Số trẻ em tiêu chuẩn"
@@ -312,7 +316,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     helperText={<ErrorMessage name="standardChildCapacity" />}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={3}>
+                            <Grid xs={12} sm={3}>
                                 <Field
                                     as={TextField}
                                     label="Số người lớn tối đa"
@@ -323,7 +327,7 @@ const RoomCategoryForm = ({ initialData, onClose, onSave }) => {
                                     helperText={<ErrorMessage name="maxAdultCapacity" />}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={3}>
+                            <Grid xs={12} sm={3}>
                                 <Field
                                     as={TextField}
                                     label="Số trẻ em tối đa"

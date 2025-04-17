@@ -76,7 +76,6 @@ function RoutersAdmin() {
                     </ProtectedRoute>
                 }
             >
-                <Route index element={<ContentAdmin />} />
                 <Route path="partners" element={<PartnersContent />} />
                 <Route path="employee" element={<EmployeeAdmin />} />
                 <Route path="cashbook" element={<CashbookContent />} />

@@ -71,7 +71,6 @@ const RoomCategoryList = () => {
     const fetchData = async () => {
         try {
             setState(prev => ({ ...prev, isLoading: true, errorMessage: null }));
-
             const { keyword, status, minHourlyPrice, maxHourlyPrice, minDailyPrice, maxDailyPrice, minOvernightPrice, maxOvernightPrice } = state.filters;
 
             const params = {
@@ -89,7 +88,6 @@ const RoomCategoryList = () => {
 
             const response = await roomService.searchRoomCategories(params);
             const categoriesArray = response.content || [];
-
             const roomsResponse = await roomService.getAll(0, 100);
             const rooms = roomsResponse.content || [];
 
@@ -128,7 +126,6 @@ const RoomCategoryList = () => {
             toast.error("Không tìm thấy dữ liệu để chỉnh sửa!");
             return false;
         }
-
         if ((mode === FORM_MODES.EDIT || mode === FORM_MODES.VIEW) && !item?.id) {
             toast.error(`Không tìm thấy ID unique của ${type === FORM_TYPES.ROOM ? 'phòng' : 'hạng phòng'}!`);
             return false;
@@ -166,7 +163,6 @@ const RoomCategoryList = () => {
         if (!validatedItem && (mode === FORM_MODES.EDIT || mode === FORM_MODES.VIEW)) {
             return;
         }
-
         setState(prev => ({
             ...prev,
             formMode: mode,
@@ -186,7 +182,6 @@ const RoomCategoryList = () => {
 
     const handleSave = async (updatedItem) => {
         const { formType, formMode, selectedItem } = state;
-
         try {
             if (formType === FORM_TYPES.CATEGORY) {
                 if (formMode === FORM_MODES.ADD) {
@@ -218,6 +213,7 @@ const RoomCategoryList = () => {
     };
 
     const handleDelete = async (id) => {
+        if (!window.confirm("Bạn có chắc chắn muốn xóa hạng phòng này?")) return;
         try {
             await roomService.deleteRoomCategory(id);
             toast.success("Xóa hạng phòng thành công!");
@@ -233,9 +229,22 @@ const RoomCategoryList = () => {
         const { name, value } = e.target;
         setState(prev => ({
             ...prev,
+            filters: { ...prev.filters, [name]: value }
+        }));
+    };
+
+    const resetFilters = () => {
+        setState(prev => ({
+            ...prev,
             filters: {
-                ...prev.filters,
-                [name]: value
+                keyword: '',
+                status: '',
+                minHourlyPrice: '',
+                maxHourlyPrice: '',
+                minDailyPrice: '',
+                maxDailyPrice: '',
+                minOvernightPrice: '',
+                maxOvernightPrice: '',
             }
         }));
     };
@@ -254,12 +263,7 @@ const RoomCategoryList = () => {
         return (
             <Box sx={{ p: 3 }}>
                 <Typography color="error">{errorMessage}</Typography>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={fetchData}
-                    sx={{ mt: 2 }}
-                >
+                <Button variant="contained" color="primary" onClick={fetchData} sx={{ mt: 2 }}>
                     Thử lại
                 </Button>
             </Box>
@@ -270,54 +274,61 @@ const RoomCategoryList = () => {
         <TableRow
             key={category.id}
             onClick={() => handleOpenForm(FORM_MODES.VIEW, FORM_TYPES.CATEGORY, category)}
-            sx={{ cursor: "pointer" }}
+            sx={{
+                cursor: "pointer",
+                "&:hover": { backgroundColor: "#f5f5f5" }
+            }}
         >
-            <TableCell>{category.code}</TableCell>
-            <TableCell>{category.name}</TableCell>
-            <TableCell>{category.description || "Không có mô tả"}</TableCell>
-            <TableCell>{roomCounts[category.id] || 0}</TableCell>
-            <TableCell>
+            <TableCell sx={{ width: "100px" }}>{category.code}</TableCell>
+            <TableCell sx={{ width: "150px" }}>{category.name}</TableCell>
+            <TableCell sx={{ width: "200px" }}>{category.description || "Không có mô tả"}</TableCell>
+            <TableCell sx={{ width: "80px", textAlign: "center" }}>{roomCounts[category.id] || 0}</TableCell>
+            <TableCell sx={{ width: "120px", textAlign: "center" }}>
                 {category.standardAdultCapacity}/{category.maxAdultCapacity}
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ width: "120px", textAlign: "center" }}>
                 {category.standardChildCapacity}/{category.maxChildCapacity}
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ width: "100px", textAlign: "right" }}>
                 {(category.hourlyPrice ?? 0).toLocaleString("vi-VN")}
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ width: "100px", textAlign: "right" }}>
                 {(category.dailyPrice ?? 0).toLocaleString("vi-VN")}
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ width: "100px", textAlign: "right" }}>
                 {(category.overnightPrice ?? 0).toLocaleString("vi-VN")}
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ width: "100px", textAlign: "right" }}>
                 {(category.earlyCheckinFee ?? 0).toLocaleString("vi-VN")}
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ width: "100px", textAlign: "right" }}>
                 {(category.lateCheckoutFee ?? 0).toLocaleString("vi-VN")}
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ width: "100px" }}>
                 {category.status === ROOM_STATUS.ACTIVE ? "Đang kinh doanh" : "Ngừng kinh doanh"}
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ width: "180px" }}>
                 <Button
-                    variant="text"
+                    variant="contained"
                     color="primary"
+                    size="small"
                     onClick={(e) => {
                         e.stopPropagation();
                         handleOpenForm(FORM_MODES.EDIT, FORM_TYPES.CATEGORY, category);
                     }}
+                    sx={{ mr: 1, width: "80px" }}
                 >
                     Chỉnh sửa
                 </Button>
                 <Button
-                    variant="text"
+                    variant="contained"
                     color="error"
+                    size="small"
                     onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(category.id);
                     }}
+                    sx={{ width: "80px" }}
                 >
                     Xóa
                 </Button>
@@ -327,42 +338,35 @@ const RoomCategoryList = () => {
 
     return (
         <Box sx={{ p: 2 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Tabs value={selectedTab} onChange={handleTabChange}>
                     <Tab label="Hạng phòng" />
                     <Tab label="Danh sách phòng" />
                 </Tabs>
-                <Box>
-                    <Button
-                        variant="contained"
-                        color="success"
-                        onClick={() =>
-                            handleOpenForm(
-                                FORM_MODES.ADD,
-                                selectedTab === 0 ? FORM_TYPES.CATEGORY : FORM_TYPES.ROOM
-                            )
-                        }
-                        sx={{ mr: 1 }}
-                    >
-                        Thêm mới
-                    </Button>
-                </Box>
+                <Button
+                    variant="contained"
+                    color="success"
+                    onClick={() => handleOpenForm(FORM_MODES.ADD, selectedTab === 0 ? FORM_TYPES.CATEGORY : FORM_TYPES.ROOM)}
+                >
+                    Thêm mới
+                </Button>
             </Box>
 
             {selectedTab === 0 && (
                 <>
-                    <Box sx={{ mb: 2 }}>
-                        <Grid container spacing={2}>
-                            <Grid item xs={12} sm={4}>
+                    <Box sx={{ mb: 2, p: 2, backgroundColor: "#f9f9f9", borderRadius: 2, boxShadow: 1 }}>
+                        <Grid container spacing={2} alignItems="center">
+                            <Grid item xs={12} sm={6} md={3}>
                                 <TextField
                                     label="Tìm kiếm (Mã, Tên, Mô tả)"
                                     name="keyword"
                                     value={filters.keyword}
                                     onChange={handleFilterChange}
                                     fullWidth
+                                    size="small"
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={2}>
+                            <Grid item xs={12} sm={6} md={3}>
                                 <TextField
                                     select
                                     label="Trạng thái"
@@ -370,71 +374,89 @@ const RoomCategoryList = () => {
                                     value={filters.status}
                                     onChange={handleFilterChange}
                                     fullWidth
+                                    size="small"
                                 >
                                     <MenuItem value="">Tất cả</MenuItem>
                                     <MenuItem value="ACTIVE">Đang kinh doanh</MenuItem>
                                     <MenuItem value="INACTIVE">Ngừng kinh doanh</MenuItem>
                                 </TextField>
                             </Grid>
-                            <Grid item xs={12} sm={3}>
+                            <Grid item xs={12} sm={6} md={3}>
                                 <TextField
-                                    label="Giá giờ tối thiểu"
+                                    label="Giá giờ (Tối thiểu)"
                                     name="minHourlyPrice"
                                     type="number"
                                     value={filters.minHourlyPrice}
                                     onChange={handleFilterChange}
                                     fullWidth
+                                    size="small"
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={3}>
+                            <Grid item xs={12} sm={6} md={3}>
                                 <TextField
-                                    label="Giá giờ tối đa"
+                                    label="Giá giờ (Tối đa)"
                                     name="maxHourlyPrice"
                                     type="number"
                                     value={filters.maxHourlyPrice}
                                     onChange={handleFilterChange}
                                     fullWidth
+                                    size="small"
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={3}>
+                            <Grid item xs={12} sm={6} md={3}>
                                 <TextField
-                                    label="Giá ngày tối thiểu"
+                                    label="Giá ngày (Tối thiểu)"
                                     name="minDailyPrice"
                                     type="number"
                                     value={filters.minDailyPrice}
                                     onChange={handleFilterChange}
                                     fullWidth
+                                    size="small"
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={3}>
+                            <Grid item xs={12} sm={6} md={3}>
                                 <TextField
-                                    label="Giá ngày tối đa"
+                                    label="Giá ngày (Tối đa)"
                                     name="maxDailyPrice"
                                     type="number"
                                     value={filters.maxDailyPrice}
                                     onChange={handleFilterChange}
                                     fullWidth
+                                    size="small"
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={3}>
+                            <Grid item xs={12} sm={6} md={3}>
                                 <TextField
-                                    label="Giá qua đêm tối thiểu"
+                                    label="Giá qua đêm (Tối thiểu)"
                                     name="minOvernightPrice"
                                     type="number"
                                     value={filters.minOvernightPrice}
                                     onChange={handleFilterChange}
                                     fullWidth
+                                    size="small"
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={3}>
+                            <Grid item xs={12} sm={6} md={3}>
                                 <TextField
-                                    label="Giá qua đêm tối đa"
+                                    label="Giá qua đêm (Tối đa)"
                                     name="maxOvernightPrice"
                                     type="number"
                                     value={filters.maxOvernightPrice}
                                     onChange={handleFilterChange}
                                     fullWidth
+                                    size="small"
                                 />
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Button
+                                    variant="outlined"
+                                    color="secondary"
+                                    onClick={resetFilters}
+                                    fullWidth
+                                    size="small"
+                                >
+                                    Xóa bộ lọc
+                                </Button>
                             </Grid>
                         </Grid>
                     </Box>
@@ -443,19 +465,19 @@ const RoomCategoryList = () => {
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>Mã hạng phòng</TableCell>
-                                    <TableCell>Tên hạng phòng</TableCell>
-                                    <TableCell>Mô tả</TableCell>
-                                    <TableCell>Số lượng phòng</TableCell>
-                                    <TableCell>Sức chứa người lớn (Tiêu chuẩn/Tối đa)</TableCell>
-                                    <TableCell>Sức chứa trẻ em (Tiêu chuẩn/Tối đa)</TableCell>
-                                    <TableCell>Giá giờ</TableCell>
-                                    <TableCell>Giá cả ngày</TableCell>
-                                    <TableCell>Giá qua đêm</TableCell>
-                                    <TableCell>Phí check-in sớm</TableCell>
-                                    <TableCell>Phí check-out muộn</TableCell>
-                                    <TableCell>Trạng thái</TableCell>
-                                    <TableCell>Hành động</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold" }}>Mã hạng phòng</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold" }}>Tên hạng phòng</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold" }}>Mô tả</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold", textAlign: "center" }}>Số lượng phòng</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold", textAlign: "center" }}>Sức chứa người lớn</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold", textAlign: "center" }}>Sức chứa trẻ em</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Giá giờ</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Giá cả ngày</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Giá qua đêm</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Phí check-in sớm</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold", textAlign: "right" }}>Phí check-out muộn</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold" }}>Trạng thái</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold" }}>Hành động</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>

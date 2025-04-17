@@ -85,8 +85,9 @@ export default function SchematicView({ onBookingOpen, onFilterOpen, onViewModeC
 
     const getRoomBackgroundColor = (status) => {
         switch (status) {
-            case 'IN_USE': return '#25b62c';
-            case 'UPCOMING': return '#c6be77';
+            case 'IN_USE': return 'rgba(87,214,96,0.71)';
+            case 'CHECKOUT_SOON': return '#FFFFFF';
+            case 'AVAILABLE': return '#FFFFFF';
             default: return '#FFFFFF';
         }
     };
@@ -153,14 +154,17 @@ export default function SchematicView({ onBookingOpen, onFilterOpen, onViewModeC
                             {rooms.map((room) => {
                                 const statusInfo = getStatusLabelAndColor(room.status, room.isClean);
                                 const backgroundColor = getRoomBackgroundColor(room.status);
+                                const roomCategory = room.roomCategory || {};
                                 return (
                                     <Card
                                         key={room.id}
                                         sx={{
-                                            borderRadius: 2,
+                                            borderRadius: 4,
                                             position: 'relative',
                                             backgroundColor: backgroundColor,
                                             color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF',
+                                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                                            border: '1px solid #e0e0e0',
                                         }}
                                     >
                                         <CardContent sx={{ p: 1.5 }}>
@@ -172,40 +176,79 @@ export default function SchematicView({ onBookingOpen, onFilterOpen, onViewModeC
                                                     sx={{
                                                         color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF',
                                                         backgroundColor: backgroundColor === '#FFFFFF' ? undefined : 'rgba(0, 0, 0, 0.2)',
+                                                        fontWeight: 'bold',
                                                     }}
                                                 />
-                                                <IconButton size="small">
-                                                    <MoreVertIcon sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }} />
+                                                <IconButton size="small" sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }}>
+                                                    <MoreVertIcon />
                                                 </IconButton>
                                             </Box>
                                             <Box sx={{ mb: 1 }}>
-                                                <Typography variant="h6" sx={{ textAlign: 'left', color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }}>
-                                                    P.{room.id.toString().padStart(3, '0')}
+                                                <Typography
+                                                    variant="h6"
+                                                    sx={{
+                                                        textAlign: 'left',
+                                                        color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '1.2rem',
+                                                    }}
+                                                >
+                                                    {roomCategory.code || 'N/A'}
                                                 </Typography>
                                             </Box>
                                             <Typography
                                                 variant="body2"
-                                                sx={{ mb: 1, color: backgroundColor === '#FFFFFF' ? 'text.secondary' : '#FFFFFF' }}
+                                                sx={{
+                                                    mb: 1,
+                                                    color: backgroundColor === '#FFFFFF' ? '#757575' : '#FFFFFF',
+                                                    fontSize: '0.9rem',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                }}
                                             >
-                                                {room.roomCategory?.name || 'Không có loại phòng'}
+                                                {roomCategory.name || 'Không có loại phòng'}
                                             </Typography>
-                                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    mb: 2,
+                                                    color: backgroundColor === '#FFFFFF' ? '#757575' : '#FFFFFF',
+                                                    fontSize: '0.8rem',
+                                                    fontStyle: 'italic',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                }}
+                                            >
+                                                {roomCategory.description || 'Không có mô tả'}
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                     <AccessTimeIcon fontSize="small" sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }} />
-                                                    <Typography variant="body2" sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }}>
-                                                        {room.roomCategory?.hourlyPrice?.toLocaleString('vi-VN') || '0'}đ
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF', fontSize: '0.9rem' }}
+                                                    >
+                                                        {roomCategory.hourlyPrice?.toLocaleString('vi-VN', { style: 'decimal' }) || '0'}đ
                                                     </Typography>
                                                 </Box>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                     <WbSunnyIcon fontSize="small" sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }} />
-                                                    <Typography variant="body2" sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }}>
-                                                        {room.roomCategory?.dailyPrice?.toLocaleString('vi-VN') || '0'}đ
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF', fontSize: '0.9rem' }}
+                                                    >
+                                                        {roomCategory.dailyPrice?.toLocaleString('vi-VN', { style: 'decimal' }) || '0'}đ
                                                     </Typography>
                                                 </Box>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                     <Brightness2Icon fontSize="small" sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }} />
-                                                    <Typography variant="body2" sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF' }}>
-                                                        {room.roomCategory?.overnightPrice?.toLocaleString('vi-VN') || '0'}đ
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{ color: backgroundColor === '#FFFFFF' ? 'inherit' : '#FFFFFF', fontSize: '0.9rem' }}
+                                                    >
+                                                        {roomCategory.overnightPrice?.toLocaleString('vi-VN', { style: 'decimal' }) || '0'}đ
                                                     </Typography>
                                                 </Box>
                                             </Box>

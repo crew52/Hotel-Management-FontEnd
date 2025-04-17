@@ -108,10 +108,38 @@ const RoomCategoryList = () => {
                 size: 100
             };
 
+            console.log("Fetching room categories with params:", params);
             const response = await roomService.searchRoomCategories(params);
-            const categoriesArray = response.content || [];
+            console.log("Room categories response:", response);
+            
+            // Xử lý nhiều dạng response khác nhau cho danh mục phòng
+            let categoriesArray = [];
+            if (response && response.content) {
+                categoriesArray = response.content;
+            } else if (Array.isArray(response)) {
+                categoriesArray = response;
+            } else if (response && typeof response === 'object' && !Array.isArray(response)) {
+                categoriesArray = [response];
+            }
+
+            console.log("Processed categories:", categoriesArray);
+            
+            // Lấy danh sách phòng để đếm số lượng
+            console.log("Fetching rooms for counting");
             const roomsResponse = await roomService.getAll(0, 100);
-            const rooms = roomsResponse.content || [];
+            console.log("Rooms response:", roomsResponse);
+            
+            // Xử lý nhiều dạng response khác nhau cho phòng
+            let rooms = [];
+            if (roomsResponse && roomsResponse.content) {
+                rooms = roomsResponse.content;
+            } else if (Array.isArray(roomsResponse)) {
+                rooms = roomsResponse;
+            } else if (roomsResponse && typeof roomsResponse === 'object' && !Array.isArray(roomsResponse)) {
+                rooms = [roomsResponse];
+            }
+            
+            console.log("Processed rooms:", rooms);
 
             const roomCounts = categoriesArray.reduce((counts, category) => ({
                 ...counts,

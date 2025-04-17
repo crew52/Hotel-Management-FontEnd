@@ -31,8 +31,31 @@ const RoomList = ({ onOpenForm, onSave }) => {
             setLoading(true);
             setError(null);
             const response = await roomService.getAll(pageNum, size);
-            setRooms(response.content || []);
-            setTotalElements(response.totalElements || 0);
+            
+            // Xử lý nhiều dạng response khác nhau
+            console.log("Raw response from room service:", response);
+            
+            let content = [];
+            let total = 0;
+            
+            if (response && response.content) {
+                // Trường hợp 1: Response có định dạng {content: [...], totalElements: number}
+                content = response.content;
+                total = response.totalElements || 0;
+            } else if (Array.isArray(response)) {
+                // Trường hợp 2: Response là array trực tiếp
+                content = response;
+                total = response.length;
+            } else if (response && typeof response === 'object') {
+                // Trường hợp 3: Response là object nhưng không có content
+                content = [response];
+                total = 1;
+            }
+            
+            setRooms(content);
+            setTotalElements(total);
+            
+            console.log("Processed data:", { content, total });
         } catch (error) {
             setError("Không thể tải danh sách phòng. Vui lòng thử lại!");
             toast.error("Lỗi khi tải dữ liệu!");

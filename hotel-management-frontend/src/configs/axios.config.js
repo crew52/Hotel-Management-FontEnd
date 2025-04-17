@@ -1,7 +1,6 @@
-import axios from "axios";
+import { axiosInstance } from "../services/api";
 
-export const axiosInstance = axios.create({
-    baseURL: "http://localhost:8080/api"
-})
+// Export axiosInstance đã được cấu hình từ API
+export { axiosInstance };
 
 

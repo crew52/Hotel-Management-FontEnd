@@ -1,24 +1,23 @@
 import axios from 'axios';
 
-// Đảm bảo URL đúng với backend
-const API_URL = 'http://localhost:8080/api';
+// Địa chỉ backend API
+const API_URL = 'http://localhost:8080';
+const API_PREFIX = '/api';
 
-// In thông tin debug
-console.log('API Service: Initializing with base URL:', API_URL);
+console.log('API Service: Khởi tạo với URL:', API_URL + API_PREFIX);
 
-// Create axios instance with default config
+// Tạo axios instance với cấu hình mặc định
 const axiosInstance = axios.create({
-  baseURL: API_URL,
+  baseURL: API_URL + API_PREFIX,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  timeout: 10000, // 10 seconds timeout
-  // Đảm bảo CORS được xử lý đúng
-  withCredentials: false
+  timeout: 15000, // 15 giây timeout
+  withCredentials: false // Tắt credentials để tránh vấn đề CORS
 });
 
-// Request interceptor - runs before each request
+// Request interceptor - chạy trước mỗi request
 axiosInstance.interceptors.request.use(
   (config) => {
     console.log('API Request:', {
@@ -29,9 +28,9 @@ axiosInstance.interceptors.request.use(
     
     const token = localStorage.getItem('token');
     if (token) {
-      // Sửa lại format của Authorization header
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
     return config;
   },
   (error) => {
@@ -40,7 +39,7 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Response interceptor - runs after each response
+// Response interceptor - chạy sau mỗi response
 axiosInstance.interceptors.response.use(
   (response) => {
     console.log('API Response:', {
@@ -56,11 +55,11 @@ axiosInstance.interceptors.response.use(
       message: error.message
     });
     
-    // Handle token errors
+    // Xử lý lỗi token
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem("toknpen");
+      localStorage.removeItem("token");
       localStorage.removeItem("user");
-      // Redirect to login page if needed
+      // Chuyển hướng đến trang đăng nhập
       window.location.href = "/login";
     }
     
@@ -68,100 +67,94 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-// Thêm phương thức kiểm tra kết nối
+// Kiểm tra kết nối API
 const checkConnection = async () => {
-  console.log('Checking API connection...');
+  console.log('Đang kiểm tra kết nối API...');
   
   try {
-    // Thử kết nối đến API bằng cách gọi một endpoint đơn giản
-    // Sử dụng OPTIONS request để kiểm tra CORS
-    const response = await axios.options(API_URL);
-    console.log('API Connection Check Response:', response);
-    
-    // Nếu kết nối thành công, trả về status 'ok'
+    // Sử dụng axios trực tiếp thay vì axiosInstance để tránh baseURL
+    const response = await axios.get(`${API_URL}/api/auth/check`, { timeout: 5000 });
+    console.log('Kết nối API thành công:', response);
     return { 
-      status: 'ok', 
-      message: 'Kết nối API thành công' 
+      status: 'ok',
+      message: 'Kết nối API thành công'
     };
   } catch (error) {
-    console.error('API Connection Check Failed:', error);
+    console.error('Lỗi kết nối API:', error);
     
-    // Kiểm tra xem có phải lỗi CORS không
-    if (error.message && error.message.includes('CORS')) {
-      return { 
-        status: 'ok', 
-        message: 'API server đang hoạt động (CORS được cấu hình)' 
-      };
-    }
-    
-    // Nếu lỗi là 404 hoặc 405, có thể là endpoint không tồn tại nhưng API vẫn hoạt động
+    // Nếu lỗi là 404, có thể API vẫn hoạt động nhưng endpoint không tồn tại
     if (error.response && (error.response.status === 404 || error.response.status === 405)) {
       return { 
-        status: 'ok', 
-        message: 'API server đang hoạt động' 
+        status: 'ok',
+        message: 'API server đang hoạt động'
       };
     }
     
     return { 
-      status: 'error', 
-      message: 'Không thể kết nối đến API server: ' + (error.message || 'Unknown error') 
+      status: 'error',
+      message: 'Không thể kết nối đến API server: ' + (error.message || 'Lỗi không xác định')
     };
   }
 };
 
-// API utility functions
+// Các hàm API
 const api = {
   // Authentication
   login: async (credentials) => {
-    console.log('API: Login called with credentials:', credentials);
+    console.log('API: Đăng nhập với thông tin:', credentials);
     try {
       const response = await axiosInstance.post('/auth/login', credentials);
-      console.log('API: Login response:', response.data);
+      console.log('API: Kết quả đăng nhập:', response.data);
       
-      // Xử lý response dựa trên cấu trúc của API backend
       let data = response.data;
-      
-      // Kiểm tra cấu trúc response để xác định thành công hay thất bại
-      if (data.success === false) {
-        throw new Error(data.message || 'Login failed');
-      }
-      
-      // Chuẩn hóa dữ liệu user
       let token, userInfo;
       
-      // Trường hợp 1: Response trả về {success, data: {token, userInfo}}
-      if (data.success && data.data) {
+      // Xử lý các trường hợp response khác nhau
+      if (data.token) {
+        // Trường hợp phổ biến: response trả về {token, user}
+        token = data.token;
+        userInfo = data.user || data.userInfo;
+      } 
+      else if (typeof data === 'string') {
+        // Trường hợp JWT token trả về trực tiếp dưới dạng string
+        token = data;
+        try {
+          // Lưu token để có thể gọi API lấy thông tin user
+          localStorage.setItem('token', token);
+          const userResponse = await axiosInstance.get('/auth/me');
+          userInfo = userResponse.data;
+        } catch (userError) {
+          console.error('Không thể lấy thông tin người dùng sau khi đăng nhập:', userError);
+          throw new Error('Xác thực thành công nhưng không lấy được thông tin người dùng');
+        }
+      }
+      else if (data.success && data.data) {
+        // Trường hợp response có dạng {success, data: {token, userInfo}}
         token = data.data.token;
         userInfo = data.data.userInfo;
       }
-      // Trường hợp 2: Response trả về {token, user} trực tiếp
-      else if (data.token) {
-        token = data.token;
-        userInfo = data.user || data.userInfo;
-      }
-      // Trường hợp 3: Response trả về dữ liệu trực tiếp (không có wrapper)
-      else if (typeof data === 'object' && !data.success) {
+      else if (typeof data === 'object') {
+        // Trường hợp khác: response trả về object không có success
         token = data.token;
         userInfo = data.user || data.userInfo;
       }
       
-      // Nếu không có token hoặc user info, báo lỗi
+      // Kiểm tra dữ liệu hợp lệ
       if (!token || !userInfo) {
-        console.error('API: Invalid login response structure', data);
-        throw new Error('Invalid response format from server');
+        console.error('API: Cấu trúc response không hợp lệ', data);
+        throw new Error('Định dạng response không hợp lệ');
       }
       
-      // Lưu token và thông tin user vào localStorage
+      // Lưu token và thông tin user
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userInfo));
       
-      // Trả về dữ liệu chuẩn hóa
       return {
         token,
         user: userInfo
       };
     } catch (error) {
-      console.error('API: Login failed:', error.response?.data || error.message);
+      console.error('API: Đăng nhập thất bại:', error.response?.data || error.message);
       throw error;
     }
   },
@@ -170,17 +163,21 @@ const api = {
   
   logout: async () => {
     try {
-      // Call logout API endpoint
       const token = localStorage.getItem('token');
       if (token) {
-        await axiosInstance.post('/auth/logout');
+        try {
+          await axiosInstance.post('/auth/logout');
+          console.log('Đăng xuất thành công');
+        } catch (apiError) {
+          console.error('API đăng xuất thất bại:', apiError);
+        }
       }
     } catch (error) {
-      console.error('Logout API call failed:', error);
+      console.error('Lỗi đăng xuất:', error);
     } finally {
-      // Always remove local storage items even if the API call fails
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      window.location.href = "/login";
     }
   },
   
@@ -228,15 +225,15 @@ const api = {
   },
 
   getRedirectPath: () => {
-    console.log('getRedirectPath: Checking role for redirection');
+    console.log('Kiểm tra vai trò người dùng để chuyển hướng');
     const user = api.getCurrentUser();
-    console.log('Current user roles:', user?.roles);
+    console.log('Vai trò người dùng:', user?.roles);
     
     if (api.isAdmin()) {
-      console.log('User is admin, redirecting to /admin');
+      console.log('Người dùng là admin, chuyển hướng đến /admin');
       return '/admin';
     } else {
-      console.log('User is not admin, redirecting to /employees');
+      console.log('Người dùng không phải admin, chuyển hướng đến /employees');
       return '/employees';
     }
   },
@@ -244,27 +241,182 @@ const api = {
   checkConnection,
   
   // Hotel room management
-  getRooms: (params) => axiosInstance.get('/rooms', { params }),
-  getRoomById: (id) => axiosInstance.get(`/rooms/${id}`),
-  getRoomCategories: () => axiosInstance.get('/rooms/categories'),
-  createRoom: (roomData) => axiosInstance.post('/rooms', roomData),
-  updateRoom: (id, roomData) => axiosInstance.put(`/rooms/${id}`, roomData),
-  deleteRoom: (id) => axiosInstance.delete(`/rooms/${id}`),
+  getRooms: (params) => {
+    console.log("API: Getting rooms with params:", params);
+    return axiosInstance.get('/rooms', { params })
+      .then(response => {
+        console.log("API: Get rooms response:", response.data);
+        return response.data;
+      });
+  },
+  getRoomById: (id) => {
+    console.log(`API: Getting room with ID: ${id}`);
+    return axiosInstance.get(`/rooms/${id}`)
+      .then(response => {
+        console.log("API: Get room by ID response:", response.data);
+        return response.data;
+      });
+  },
+  getRoomCategories: () => {
+    console.log("API: Getting room categories");
+    return axiosInstance.get('/room-categories')
+      .then(response => {
+        console.log("API: Get room categories response:", response.data);
+        return response.data;
+      });
+  },
+  getRoomCategoriesById: (id) => {
+    console.log(`API: Getting room category with ID: ${id}`);
+    return axiosInstance.get(`/room-categories/${id}`)
+      .then(response => {
+        console.log("API: Get room category by ID response:", response.data);
+        return response.data;
+      });
+  },
+  createRoom: (roomData) => {
+    console.log("API: Creating room:", roomData);
+    return axiosInstance.post('/rooms', roomData)
+      .then(response => {
+        console.log("API: Create room response:", response.data);
+        return response.data;
+      });
+  },
+  updateRoom: (id, roomData) => {
+    console.log(`API: Updating room ${id}:`, roomData);
+    return axiosInstance.put(`/rooms/${id}`, roomData)
+      .then(response => {
+        console.log("API: Update room response:", response.data);
+        return response.data;
+      });
+  },
+  deleteRoom: (id) => {
+    console.log(`API: Deleting room ${id}`);
+    return axiosInstance.delete(`/rooms/${id}/delete`)
+      .then(response => {
+        console.log("API: Delete room response:", response.data);
+        return response.data;
+      });
+  },
+  
+  // Room categories
+  addRoomCategory: (data) => {
+    console.log("API: Creating room category:", data);
+    return axiosInstance.post('/room-categories', data)
+      .then(response => {
+        console.log("API: Create room category response:", response.data);
+        return response.data;
+      });
+  },
+  updateRoomCategory: (id, data) => {
+    console.log(`API: Updating room category ${id}:`, data);
+    return axiosInstance.put(`/room-categories/${id}/edit`, data)
+      .then(response => {
+        console.log("API: Update room category response:", response.data);
+        return response.data;
+      });
+  },
+  deleteRoomCategory: (id) => {
+    console.log(`API: Deleting room category ${id}`);
+    return axiosInstance.delete(`/room-categories/${id}/delete`)
+      .then(response => {
+        console.log("API: Delete room category response:", response.data);
+        return response.data;
+      });
+  },
+  searchRoomCategories: (params) => {
+    console.log("API: Searching room categories with params:", params);
+    return axiosInstance.get('/room-categories/search', { params })
+      .then(response => {
+        console.log("API: Search room categories response:", response.data);
+        return response.data;
+      });
+  },
+  getAllRoomCategories: () => {
+    console.log("API: Getting all room categories");
+    return axiosInstance.get('/room-categories')
+      .then(response => {
+        console.log("API: Get all room categories response:", response.data);
+        return response.data;
+      });
+  },
+  
+  // Employee management
+  getEmployees: (page = 0, size = 10) => {
+    console.log(`API: Getting employees page=${page}, size=${size}`);
+    return axiosInstance.get(`/employees?page=${page}&size=${size}`)
+      .then(response => {
+        console.log("API: Get employees response:", response.data);
+        return response.data;
+      });
+  },
+  getEmployeeById: (id) => {
+    console.log(`API: Getting employee with ID: ${id}`);
+    return axiosInstance.get(`/employees/${id}`)
+      .then(response => {
+        console.log("API: Get employee by ID response:", response.data);
+        return response.data;
+      });
+  },
+  createEmployee: (data) => {
+    console.log("API: Creating employee:", data);
+    return axiosInstance.post('/employees', data)
+      .then(response => {
+        console.log("API: Create employee response:", response.data);
+        return response.data;
+      });
+  },
+  updateEmployee: (id, data) => {
+    console.log(`API: Updating employee ${id}:`, data);
+    return axiosInstance.put(`/employees/${id}`, data)
+      .then(response => {
+        console.log("API: Update employee response:", response.data);
+        return response.data;
+      });
+  },
+  deleteEmployee: (id) => {
+    console.log(`API: Deleting employee ${id}`);
+    return axiosInstance.delete(`/employees/${id}`)
+      .then(response => {
+        console.log("API: Delete employee response:", response.data);
+        return response.data;
+      });
+  },
+  searchEmployees: (search) => {
+    console.log(`API: Searching employees with keyword: ${search}`);
+    return axiosInstance.get(`/employees?full_name_like=${search}`)
+      .then(response => {
+        console.log("API: Search employees response:", response.data);
+        return response.data;
+      });
+  },
+  
+  // Room view for employees
+  getAllRoomView: () => {
+    console.log("API: Getting all rooms view for employee");
+    return axiosInstance.get('/rooms')
+      .then(response => {
+        console.log("API: Get all rooms view response:", response.data);
+        return response.data;
+      });
+  },
+  searchRoomView: ({ keyword = "", status = "", floor = "" }) => {
+    console.log(`API: Searching rooms with keyword="${keyword}", status="${status}", floor="${floor}"`);
+    const query = `/rooms/search?keyword=${keyword}&status=${status}&floor=${floor}`;
+    return axiosInstance.get(query)
+      .then(response => {
+        console.log("API: Search rooms view response:", response.data);
+        return response.data;
+      });
+  },
   
   // Bookings management
   getBookings: (params) => axiosInstance.get('/bookings', { params }),
   createBooking: (bookingData) => axiosInstance.post('/bookings', bookingData),
   updateBookingStatus: (id, status) => axiosInstance.patch(`/bookings/${id}/status`, { status }),
   
-  // Employees management
-  getEmployees: () => axiosInstance.get('/employees'),
-  createEmployee: (employeeData) => axiosInstance.post('/employees', employeeData),
-  updateEmployee: (id, employeeData) => axiosInstance.put(`/employees/${id}`, employeeData),
-  deleteEmployee: (id) => axiosInstance.delete(`/employees/${id}`),
-  
   // Activity Log management
   getActivityLogs: (params) => axiosInstance.get('/activity-logs', { params }),
   getActivityLogsByUserId: (userId, params) => axiosInstance.get(`/activity-logs/${userId}`, { params }),
 };
 
-export { axiosInstance, api as default, checkConnection }; 
+export { axiosInstance, api as default, checkConnection, API_URL }; 

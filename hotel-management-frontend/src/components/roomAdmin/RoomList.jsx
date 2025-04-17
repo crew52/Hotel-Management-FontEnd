@@ -78,35 +78,43 @@ const RoomList = ({ onOpenForm, onSave }) => {
         return (
             <Box sx={{ p: 3 }}>
                 <Typography color="error">{error}</Typography>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleRefresh}
+                    sx={{ mt: 2 }}
+                >
+                    Thử lại
+                </Button>
             </Box>
         );
     }
 
     return (
-        <Paper>
+        <Paper sx={{ boxShadow: 1 }}>
             <TableContainer>
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>ID</TableCell>
-                            <TableCell>Hạng phòng</TableCell>
-                            <TableCell>Tầng</TableCell>
-                            <TableCell>Ngày bắt đầu</TableCell>
-                            <TableCell>Trạng thái</TableCell>
-                            <TableCell>Ghi chú</TableCell>
-                            <TableCell>Trạng thái vệ sinh</TableCell>
-                            <TableCell>Thời gian check-in (giờ)</TableCell>
-                            <TableCell>Hình ảnh 1</TableCell>
-                            <TableCell>Hình ảnh 2</TableCell>
-                            <TableCell>Hình ảnh 3</TableCell>
-                            <TableCell>Hình ảnh 4</TableCell>
-                            <TableCell />
+                            <TableCell sx={{ fontWeight: "bold", width: "80px" }}>ID</TableCell>
+                            <TableCell sx={{ fontWeight: "bold", width: "150px" }}>Hạng phòng</TableCell>
+                            <TableCell sx={{ fontWeight: "bold", width: "80px", textAlign: "center" }}>Tầng</TableCell>
+                            <TableCell sx={{ fontWeight: "bold", width: "120px" }}>Ngày bắt đầu</TableCell>
+                            <TableCell sx={{ fontWeight: "bold", width: "100px" }}>Trạng thái</TableCell>
+                            <TableCell sx={{ fontWeight: "bold", width: "150px" }}>Ghi chú</TableCell>
+                            <TableCell sx={{ fontWeight: "bold", width: "100px" }}>Trạng thái vệ sinh</TableCell>
+                            <TableCell sx={{ fontWeight: "bold", width: "100px", textAlign: "center" }}>Thời gian check-in (giờ)</TableCell>
+                            <TableCell sx={{ fontWeight: "bold", width: "100px" }}>Hình ảnh 1</TableCell>
+                            <TableCell sx={{ fontWeight: "bold", width: "100px" }}>Hình ảnh 2</TableCell>
+                            <TableCell sx={{ fontWeight: "bold", width: "100px" }}>Hình ảnh 3</TableCell>
+                            <TableCell sx={{ fontWeight: "bold", width: "100px" }}>Hình ảnh 4</TableCell>
+                            <TableCell sx={{ fontWeight: "bold", width: "100px" }} />
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {rooms.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={12} align="center">
+                                <TableCell colSpan={13} align="center">
                                     Không có dữ liệu để hiển thị.
                                 </TableCell>
                             </TableRow>
@@ -115,11 +123,14 @@ const RoomList = ({ onOpenForm, onSave }) => {
                                 <TableRow
                                     key={room.id}
                                     onClick={() => onOpenForm("view", "room", room)}
-                                    sx={{ cursor: "pointer" }}
+                                    sx={{
+                                        cursor: "pointer",
+                                        "&:hover": { backgroundColor: "#f5f5f5" }
+                                    }}
                                 >
                                     <TableCell>{room.id}</TableCell>
                                     <TableCell>{room.roomCategory?.name || "Không xác định"}</TableCell>
-                                    <TableCell>{room.floor ?? "Không xác định"}</TableCell>
+                                    <TableCell sx={{ textAlign: "center" }}>{room.floor ?? "Không xác định"}</TableCell>
                                     <TableCell>
                                         {room.startDate
                                             ? new Date(room.startDate).toLocaleDateString("vi-VN")
@@ -128,19 +139,21 @@ const RoomList = ({ onOpenForm, onSave }) => {
                                     <TableCell>{room.status || "Không xác định"}</TableCell>
                                     <TableCell>{room.note || "Không có ghi chú"}</TableCell>
                                     <TableCell>{room.isClean ? "Sạch" : "Chưa sạch"}</TableCell>
-                                    <TableCell>{room.checkInDuration ?? 0}</TableCell>
+                                    <TableCell sx={{ textAlign: "center" }}>{room.checkInDuration ?? 0}</TableCell>
                                     <TableCell>{room.img1 || "Không có"}</TableCell>
                                     <TableCell>{room.img2 || "Không có"}</TableCell>
                                     <TableCell>{room.img3 || "Không có"}</TableCell>
                                     <TableCell>{room.img4 || "Không có"}</TableCell>
                                     <TableCell>
                                         <Button
-                                            variant="text"
+                                            variant="contained"
                                             color="primary"
+                                            size="small"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 onOpenForm("edit", "room", room);
                                             }}
+                                            sx={{ width: "80px" }}
                                         >
                                             Chỉnh sửa
                                         </Button>

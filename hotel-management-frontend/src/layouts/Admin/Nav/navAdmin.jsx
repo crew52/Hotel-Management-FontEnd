@@ -7,44 +7,50 @@ function NavAdmin() {
     const [open, setOpen] = useState(false);
     const anchorRef = useRef(null);
     const navigate = useNavigate();
-
+    const [activeButton, setActiveButton] = useState("overview"); // Track the active button, default to "overview"
+    const [selectedMenuItem, setSelectedMenuItem] = useState(null); // Track the selected item in the "Nhân viên" dropdown
 
     const handleMouseEnter = () => {
         setOpen(true);
     };
 
-
     const handleMouseLeave = () => {
         setOpen(false);
     };
 
-    const handleMenuItemClick = (path) => {
+    const handleButtonClick = (buttonKey) => {
+        setActiveButton(buttonKey);
+        setSelectedMenuItem(null); // Reset selected menu item when a top-level button is clicked
+    };
+
+    const handleMenuItemClick = (path, itemKey) => {
         setOpen(false);
+        setActiveButton("employee"); // Set "Nhân viên" as active when any of its menu items are clicked
+        setSelectedMenuItem(itemKey); // Track the selected menu item
         navigate(path);
     };
 
-
-    const textButtonSx = {
-        color: "white",
+    const textButtonSx = (isActive) => ({
+        color: isActive ? "#FFFFFF" : "#FFFFFF",
         fontWeight: "bold",
         textTransform: "none",
         borderRadius: 6,
+        backgroundColor: isActive ? "#FFB6C1" : "transparent", // Light pink for active, transparent for inactive
         "&:hover": {
-            backgroundColor: "#006ce0",
+            backgroundColor: isActive ? "#FFB6C1" : "rgba(255, 182, 193, 0.3)", // Slightly translucent light pink on hover for inactive buttons
         },
-    };
+    });
 
-
-    const overviewButtonSx = {
-        color: "white",
-        backgroundColor: "#0052cc",
+    const overviewButtonSx = (isActive) => ({
+        color: isActive ? "#FFFFFF" : "#FFFFFF",
+        backgroundColor: isActive ? "#FFB6C1" : "transparent", // Light pink for active, transparent for inactive
         fontWeight: "bold",
         textTransform: "none",
         borderRadius: 2,
         "&:hover": {
-            backgroundColor: "#0041a8",
+            backgroundColor: isActive ? "#FFB6C1" : "rgba(255, 182, 193, 0.3)", // Slightly translucent light pink on hover for inactive buttons
         },
-    };
+    });
 
     return (
         <section style={{ backgroundColor: "#007bff", padding: "5px 18px" }}>
@@ -78,22 +84,35 @@ function NavAdmin() {
                     }}
                 >
                     <Button
-                        variant="contained"
-                        sx={overviewButtonSx}
+                        variant="text"
+                        sx={overviewButtonSx(activeButton === "overview")}
                         component={Link}
                         to="/admin"
+                        onClick={() => handleButtonClick("overview")}
                     >
                         Tổng quan
                     </Button>
 
                     <Box>
-                        <Button variant="text" sx={textButtonSx} component={Link} to="/admin/rooms">
+                        <Button
+                            variant="text"
+                            sx={textButtonSx(activeButton === "rooms")}
+                            component={Link}
+                            to="/admin/rooms"
+                            onClick={() => handleButtonClick("rooms")}
+                        >
                             Phòng
                         </Button>
                     </Box>
 
                     <Box>
-                        <Button variant="text" sx={textButtonSx} component={Link} to="/admin/goods">
+                        <Button
+                            variant="text"
+                            sx={textButtonSx(activeButton === "goods")}
+                            component={Link}
+                            to="/admin/goods"
+                            onClick={() => handleButtonClick("goods")}
+                        >
                             Hàng hóa
                         </Button>
                     </Box>
@@ -101,23 +120,34 @@ function NavAdmin() {
                     <Box>
                         <Button
                             variant="text"
-                            sx={textButtonSx}
+                            sx={textButtonSx(activeButton === "transactions")}
                             component={Link}
                             to="/admin/transactions"
+                            onClick={() => handleButtonClick("transactions")}
                         >
                             Giao dịch
                         </Button>
                     </Box>
 
                     <Box>
-                        <Button variant="text" sx={textButtonSx} component={Link} to="/admin/partners">
+                        <Button
+                            variant="text"
+                            sx={textButtonSx(activeButton === "partners")}
+                            component={Link}
+                            to="/admin/partners"
+                            onClick={() => handleButtonClick("partners")}
+                        >
                             Đối tác
                         </Button>
                     </Box>
 
-
                     <Box onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-                        <Button variant="text" sx={textButtonSx} ref={anchorRef}>
+                        <Button
+                            variant="text"
+                            sx={textButtonSx(activeButton === "employee")}
+                            ref={anchorRef}
+                            onClick={() => handleButtonClick("employee")}
+                        >
                             Nhân viên
                         </Button>
                         <Popper
@@ -138,44 +168,61 @@ function NavAdmin() {
                                 onMouseLeave={handleMouseLeave}
                             >
                                 <MenuList dense>
-                                    <MenuItem onClick={() => handleMenuItemClick("/admin/employee")}>
+                                    <MenuItem
+                                        onClick={() => handleMenuItemClick("/admin/employee", "employeeList")}
+                                        sx={{
+                                            color: "#000000", // Light pink text for menu items
+                                            backgroundColor: selectedMenuItem === "employeeList" ? "rgba(255, 182, 193, 0.5)" : "transparent", // Slightly translucent light pink for selected
+                                            "&:hover": {
+                                                backgroundColor: selectedMenuItem === "employeeList" ? "rgba(255, 182, 193, 0.5)" : "rgba(255, 182, 193, 0.3)", // Translucent light pink on hover for unselected items
+                                            },
+                                        }}
+                                    >
                                         Nhân viên
                                     </MenuItem>
                                     <MenuItem
-                                        onClick={() => handleMenuItemClick()}
+                                        onClick={() => handleMenuItemClick("/admin/employee/schedule", "schedule")}
                                         sx={{
+                                            color: "#000000", // Light pink text for menu items
+                                            backgroundColor: selectedMenuItem === "schedule" ? "rgba(255, 182, 193, 0.5)" : "transparent",
                                             "&:hover": {
-                                                backgroundColor: "#f0f0f0",
+                                                backgroundColor: selectedMenuItem === "schedule" ? "rgba(255, 182, 193, 0.5)" : "rgba(255, 182, 193, 0.3)",
                                             },
                                         }}
                                     >
                                         Lịch làm việc
                                     </MenuItem>
                                     <MenuItem
-                                        onClick={() => handleMenuItemClick()}
+                                        onClick={() => handleMenuItemClick("/admin/employee/attendance", "attendance")}
                                         sx={{
+                                            color: "#000000", // Light pink text for menu items
+                                            backgroundColor: selectedMenuItem === "attendance" ? "rgba(255, 182, 193, 0.5)" : "transparent",
                                             "&:hover": {
-                                                backgroundColor: "#f0f0f0",
+                                                backgroundColor: selectedMenuItem === "attendance" ? "rgba(255, 182, 193, 0.5)" : "rgba(255, 182, 193, 0.3)",
                                             },
                                         }}
                                     >
                                         Chấm công
                                     </MenuItem>
                                     <MenuItem
-                                        onClick={() => handleMenuItemClick()}
+                                        onClick={() => handleMenuItemClick("/admin/employee/payroll", "payroll")}
                                         sx={{
+                                            color: "#000000", // Light pink text for menu items
+                                            backgroundColor: selectedMenuItem === "payroll" ? "rgba(255, 182, 193, 0.5)" : "transparent",
                                             "&:hover": {
-                                                backgroundColor: "#f0f0f0",
+                                                backgroundColor: selectedMenuItem === "payroll" ? "rgba(255, 182, 193, 0.5)" : "rgba(255, 182, 193, 0.3)",
                                             },
                                         }}
                                     >
                                         Bảng tính lương
                                     </MenuItem>
                                     <MenuItem
-                                        onClick={() => handleMenuItemClick()}
+                                        onClick={() => handleMenuItemClick("/admin/employee/settings", "employeeSettings")}
                                         sx={{
+                                            color: "#000000", // Light pink text for menu items
+                                            backgroundColor: selectedMenuItem === "employeeSettings" ? "rgba(255, 182, 193, 0.5)" : "transparent",
                                             "&:hover": {
-                                                backgroundColor: "#f0f0f0",
+                                                backgroundColor: selectedMenuItem === "employeeSettings" ? "rgba(255, 182, 193, 0.5)" : "rgba(255, 182, 193, 0.3)",
                                             },
                                         }}
                                     >
@@ -184,22 +231,28 @@ function NavAdmin() {
                                 </MenuList>
                             </Box>
                         </Popper>
-
                     </Box>
 
                     <Box>
                         <Button
                             variant="text"
-                            sx={textButtonSx}
+                            sx={textButtonSx(activeButton === "cashbook")}
                             component={Link}
                             to="/admin/cashbook"
+                            onClick={() => handleButtonClick("cashbook")}
                         >
                             Sổ quỹ
                         </Button>
                     </Box>
 
                     <Box>
-                        <Button variant="text" sx={textButtonSx} component={Link} to="/admin/reports">
+                        <Button
+                            variant="text"
+                            sx={textButtonSx(activeButton === "reports")}
+                            component={Link}
+                            to="/admin/reports"
+                            onClick={() => handleButtonClick("reports")}
+                        >
                             Báo cáo
                         </Button>
                     </Box>

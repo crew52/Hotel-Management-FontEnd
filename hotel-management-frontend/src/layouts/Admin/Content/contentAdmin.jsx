@@ -36,9 +36,36 @@ function ContentAdmin() {
         const fetchActivityLogs = async () => {
             try {
                 setLoading(true);
-                const response = await api.getActivityLogs({ page: 0, size: 4 });
-                const logs = response.data.content;
-                setActivityLogs(logs);
+                const response = await api.getActivityLogs();
+                console.log('Activity logs response:', response.data);
+                const logs = response.data || [];
+                
+                // Sort logs by date and time (most recent first)
+                const sortedLogs = [...logs].sort((a, b) => {
+                    if (!a.date || !a.time || !b.date || !b.time) return 0;
+                    
+                    // Compare years
+                    const [dayA, monthA, yearA] = a.date.split("-").map(Number);
+                    const [dayB, monthB, yearB] = b.date.split("-").map(Number);
+                    
+                    if (yearA !== yearB) return yearB - yearA;
+                    
+                    // Compare months
+                    if (monthA !== monthB) return monthB - monthA;
+                    
+                    // Compare days
+                    if (dayA !== dayB) return dayB - dayA;
+                    
+                    // Compare times
+                    const [hourA, minuteA, secondA] = a.time.split(":").map(Number);
+                    const [hourB, minuteB, secondB] = b.time.split(":").map(Number);
+                    
+                    if (hourA !== hourB) return hourB - hourA;
+                    if (minuteA !== minuteB) return minuteB - minuteA;
+                    return secondB - secondA;
+                });
+                
+                setActivityLogs(sortedLogs);
                 
                 // Extract unique user IDs from logs
                 const userIds = [...new Set(logs.map(log => {
@@ -63,12 +90,6 @@ function ContentAdmin() {
                         // This is a fallback if users aren't included in the logs
                         const missingUserIds = userIds.filter(id => !userMap[id]);
                         if (missingUserIds.length > 0) {
-                            // This API call is hypothetical and would need to be implemented
-                            // const usersResponse = await api.getUsersByIds(missingUserIds);
-                            // usersResponse.data.forEach(user => {
-                            //    userMap[user.id] = user.username;
-                            // });
-                            
                             // For now, we'll just use a placeholder
                             missingUserIds.forEach(id => {
                                 userMap[id] = `User ${id}`;
@@ -90,10 +111,22 @@ function ContentAdmin() {
         };
 
         fetchActivityLogs();
+        
+        // Set up refresh interval (every 30 seconds)
+        const intervalId = setInterval(() => {
+            fetchActivityLogs();
+        }, 30000);
+        
+        // Clean up interval on component unmount
+        return () => clearInterval(intervalId);
     }, []);
 
     // Get username from user ID
     const getUserName = (log) => {
+        if (log.username) {
+            return log.username;
+        }
+        
         // Try different possible structures
         if (log.user && log.user.username) {
             return log.user.username;
@@ -104,15 +137,33 @@ function ContentAdmin() {
             return users[userId];
         }
         
-        return "Unknown";
+        return log.fullName || "Unknown";
     };
 
-    // Format timestamp to readable time
-    const formatTimestamp = (timestamp) => {
-        if (!timestamp) return "";
-        const date = new Date(timestamp);
-        const hours = date.getHours();
-        return `${hours} giờ tại`;
+    // Hàm tính toán thời gian đã trôi qua
+    const calculateElapsedTime = (log) => {
+        if (!log || !log.date || !log.time) return "Không xác định";
+        
+        // Định dạng: date là "17-04-2025", time là "22:04:50"
+        const [day, month, year] = log.date.split("-").map(Number);
+        const [hour, minute, second] = log.time.split(":").map(Number);
+        
+        // Tạo đối tượng Date từ các trường riêng biệt
+        const logDateTime = new Date(year, month-1, day, hour, minute, second);
+        const now = new Date();
+        
+        // Tính khoảng thời gian chênh lệch (tính bằng giây)
+        const diffInSeconds = Math.floor((now - logDateTime) / 1000);
+        
+        // Chuyển đổi thành định dạng thân thiện
+        const days = Math.floor(diffInSeconds / (3600 * 24));
+        const hours = Math.floor((diffInSeconds % (3600 * 24)) / 3600);
+        const minutes = Math.floor((diffInSeconds % 3600) / 60);
+        
+        if (days > 0) return `${days} ngày trước`;
+        if (hours > 0) return `${hours} giờ trước`;
+        if (minutes > 0) return `${minutes} phút trước`;
+        return "Vừa xong";
     };
     
     // Các màu chủ đạo của KiotViet
@@ -134,7 +185,7 @@ function ContentAdmin() {
         { name: "Mai Hương", action: "vừa tạo hóa đơn", value: 41300000, time: "10 giờ tại" },
         { name: "asdaad", action: "vừa tạo hóa đơn", value: 28100000, time: "9 giờ tại" },
     ];
-    
+
     return (
         <Box sx={{ bgcolor: colors.background, display: 'flex', minHeight: "100vh", py: 2 }}>
             <Grid container sx={{ flexGrow: 1 }}>
@@ -142,7 +193,7 @@ function ContentAdmin() {
                 <Grid item xs={12} sx={{ flexGrow: 0, '@media (min-width:1200px)': { flexBasis: '40%', maxWidth: '40%', paddingLeft: '8px', paddingRight: '8px' } }}>
                     <Grid container direction="column" spacing={1.5} sx={{ flexGrow: 1, height: '100%' }}>
                         {/* DOANH THU HÔM NAY - 1/3 chiều cao */}
-                        <Grid item sx={{ flexGrow: 1, display: 'flex' }}>
+                        <Grid item sx={{ flexGrow: 1, display: 'flex' , width : "100%"}}>
                             <Paper
                                 elevation={0}
                                 sx={{
@@ -284,7 +335,7 @@ function ContentAdmin() {
                             </Paper>
                         </Grid>
                         {/* HOẠT ĐỘNG LỄ TÂN HÔM NAY - 1/4 chiều cao */}
-                        <Grid item sx={{ flexGrow: 1, display: 'flex' }}>
+                        <Grid item sx={{ flexGrow: 1, display: 'flex' , width : "100%"}}>
                             <Paper
                                 elevation={0}
                                 sx={{
@@ -632,7 +683,7 @@ function ContentAdmin() {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     width:"100%",
-                                    height:"230px"
+                                    height:"300px"
                                     // Không cần height: '48%' nữa, để nó tự co giãn theo nội dung
                                 }}
                             >
@@ -812,7 +863,7 @@ function ContentAdmin() {
                                     borderRadius: 0,
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    height:"159px"
+                                    height:"223px"
                                     // Không cần height: '100%' nữa, để nó tự co giãn
                                 }}
                             >
@@ -1036,7 +1087,7 @@ function ContentAdmin() {
                                                             fontSize: "0.7rem"
                                                         }}
                                                     >
-                                                        {formatTimestamp(log.timestamp)}
+                                                        {calculateElapsedTime(log)}
                                                     </Typography>
                                                 }
                                                 primaryTypographyProps={{ component: 'div' }}

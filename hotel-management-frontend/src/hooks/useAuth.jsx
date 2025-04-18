@@ -8,16 +8,58 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Check token validity and load user data on init
   useEffect(() => {
-    // Check if user is already logged in
-    const currentUser = api.getCurrentUser();
-    if (currentUser) {
-      console.log('Found logged in user:', currentUser);
-      setUser(currentUser);
-    } else {
-      console.log('No logged in user found');
-    }
-    setLoading(false);
+    const validateTokenAndLoadUser = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        
+        // If no token, user is not logged in
+        if (!token) {
+          console.log('No token found, user is not authenticated');
+          setLoading(false);
+          return;
+        }
+        
+        // Try to get current user from localStorage first
+        const cachedUser = api.getCurrentUser();
+        if (cachedUser) {
+          console.log('Found cached user:', cachedUser);
+          setUser(cachedUser);
+        }
+        
+        try {
+          // Verify token validity by making API call to get current user data
+          const response = await api.axiosInstance.get('/auth/me');
+          const userData = response.data;
+          
+          console.log('Token is valid, got user data:', userData);
+          
+          // Update user in state and localStorage if different from cached
+          if (JSON.stringify(userData) !== JSON.stringify(cachedUser)) {
+            localStorage.setItem('user', JSON.stringify(userData));
+            setUser(userData);
+          }
+        } catch (apiError) {
+          console.error('Failed to validate token:', apiError);
+          
+          // If token is invalid (401), clear auth state
+          if (apiError.response && apiError.response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setUser(null);
+            setError('Session expired. Please login again.');
+          }
+        }
+      } catch (error) {
+        console.error('Error in token validation:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    validateTokenAndLoadUser();
   }, []);
 
   const login = async (usernameOrEmail, password) => {

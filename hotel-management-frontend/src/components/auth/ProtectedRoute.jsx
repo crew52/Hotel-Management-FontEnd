@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks';
 
@@ -11,12 +11,19 @@ import { useAuth } from '../../hooks';
  * @returns {JSX.Element} - Protected route component
  */
 const ProtectedRoute = ({ roles, children }) => {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading, error } = useAuth();
   const location = useLocation();
   
   console.log(`ProtectedRoute at ${location.pathname}: Authentication check started`);
   console.log(`ProtectedRoute: isAuthenticated = ${isAuthenticated}, loading = ${loading}`);
   
+  // Check token validity on component mount
+  useEffect(() => {
+    if (error) {
+      console.error('ProtectedRoute: Authentication error:', error);
+    }
+  }, [error]);
+
   // Show loading while checking authentication
   if (loading) {
     console.log('ProtectedRoute: Loading authentication state...');

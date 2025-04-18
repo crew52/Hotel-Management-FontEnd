@@ -6,6 +6,32 @@ const API_PREFIX = '/api';
 
 console.log('API Service: Khởi tạo với URL:', API_URL + API_PREFIX);
 
+// Cache configuration
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const apiCache = new Map();
+
+// Helper function to generate cache key from request config
+const getCacheKey = (config) => {
+  return `${config.method}:${config.url}:${JSON.stringify(config.params || {})}`;
+};
+
+// Helper to clear cache for specific endpoints or entirely
+const clearCache = (urlPattern) => {
+  if (!urlPattern) {
+    console.log('Clearing entire API cache');
+    apiCache.clear();
+    return;
+  }
+  
+  // Clear matching cache entries
+  for (const key of apiCache.keys()) {
+    if (key.includes(urlPattern)) {
+      console.log('Clearing cache for:', urlPattern);
+      apiCache.delete(key);
+    }
+  }
+};
+
 // Tạo axios instance với cấu hình mặc định
 const axiosInstance = axios.create({
   baseURL: API_URL + API_PREFIX,
@@ -20,11 +46,35 @@ const axiosInstance = axios.create({
 // Request interceptor - chạy trước mỗi request
 axiosInstance.interceptors.request.use(
   (config) => {
+    // Add custom request ID for debugging
+    config.headers['X-Request-ID'] = Date.now().toString(36) + Math.random().toString(36).substr(2);
+    
     console.log('API Request:', {
+      id: config.headers['X-Request-ID'],
       url: config.url,
       method: config.method,
       data: config.data
     });
+    
+    // Check if request is cacheable and already in cache
+    if (config.method?.toLowerCase() === 'get' && config.cache !== false) {
+      const cacheKey = getCacheKey(config);
+      const cachedResponse = apiCache.get(cacheKey);
+      
+      if (cachedResponse && Date.now() - cachedResponse.timestamp < CACHE_DURATION) {
+        // Return cached response
+        console.log('Using cached response for:', config.url);
+        config.adapter = () => Promise.resolve({
+          data: cachedResponse.data,
+          status: 200,
+          statusText: 'OK',
+          headers: cachedResponse.headers,
+          config: config,
+          request: null,
+          fromCache: true
+        });
+      }
+    }
     
     const token = localStorage.getItem('token');
     if (token) {
@@ -43,14 +93,32 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => {
     console.log('API Response:', {
+      id: response.config.headers['X-Request-ID'],
       status: response.status,
-      data: response.data
+      url: response.config.url,
+      method: response.config.method,
+      dataSize: JSON.stringify(response.data).length
     });
+    
+    // Cache GET responses if not from cache already
+    if (response.config.method?.toLowerCase() === 'get' && !response.fromCache && response.config.cache !== false) {
+      const cacheKey = getCacheKey(response.config);
+      apiCache.set(cacheKey, {
+        data: response.data,
+        headers: response.headers,
+        timestamp: Date.now()
+      });
+      console.log('Cached response for:', response.config.url);
+    }
+    
     return response;
   },
   async (error) => {
     console.error('API Response Error:', {
+      id: error.config?.headers?.['X-Request-ID'],
       status: error.response?.status,
+      url: error.config?.url,
+      method: error.config?.method,
       data: error.response?.data,
       message: error.message
     });
@@ -59,8 +127,22 @@ axiosInstance.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      
+      // Clear cache
+      apiCache.clear();
+      
       // Chuyển hướng đến trang đăng nhập
-      window.location.href = "/login";
+      if (!window.location.pathname.includes('/login')) {
+        console.log('Session expired, redirecting to login');
+        window.location.href = "/login";
+      }
+    }
+    
+    // Retry logic for network errors
+    if (error.message.includes('Network Error') && error.config && !error.config.__isRetry) {
+      console.log('Network error detected, retrying request...');
+      error.config.__isRetry = true;
+      return axiosInstance(error.config);
     }
     
     return Promise.reject(error);
@@ -73,7 +155,10 @@ const checkConnection = async () => {
   
   try {
     // Sử dụng axios trực tiếp thay vì axiosInstance để tránh baseURL
-    const response = await axios.get(`${API_URL}/api/auth/check`, { timeout: 5000 });
+    const response = await axios.get(`${API_URL}/api/auth/check`, { 
+      timeout: 5000,
+      cache: false 
+    });
     console.log('Kết nối API thành công:', response);
     return { 
       status: 'ok',
@@ -102,6 +187,8 @@ const api = {
   // Authentication
   login: async (credentials) => {
     console.log('API: Đăng nhập với thông tin:', credentials);
+    clearCache(); // Clear cache on login
+    
     try {
       const response = await axiosInstance.post('/auth/login', credentials);
       console.log('API: Kết quả đăng nhập:', response.data);
@@ -417,6 +504,26 @@ const api = {
   // Activity Log management
   getActivityLogs: (params) => axiosInstance.get('/activity-logs', { params }),
   getActivityLogsByUserId: (userId, params) => axiosInstance.get(`/activity-logs/${userId}`, { params }),
+
+  clearCache,
+  
+  // Add SPA-specific methods
+  prefetchData: async (endpoints) => {
+    try {
+      const requests = endpoints.map(endpoint => {
+        return axiosInstance.get(endpoint, { cache: true })
+          .catch(err => {
+            console.error(`Failed to prefetch ${endpoint}:`, err);
+            return null;
+          });
+      });
+      
+      await Promise.all(requests);
+      console.log('Prefetched data for SPA navigation');
+    } catch (error) {
+      console.error('Error during data prefetching:', error);
+    }
+  },
 };
 
 export { axiosInstance, api as default, checkConnection, API_URL }; 
